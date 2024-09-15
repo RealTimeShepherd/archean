@@ -1,8 +1,8 @@
 const $mynumber1 = 0.000000
 
 var $hatch_state = 0
-var $external_hatch_last_up = 0
-var $internal_hatch_last_up = 0
+var $external_hatch_recent = 0
+var $internal_hatch_recent = 0
 
 function @pid1($_setpoint:number, $_processvalue:number, $_kp:number, $_ki:number, $_kd:number, $_integral:number, $_prev_error:number) : number
 	var $_error = $_setpoint - $_processvalue
@@ -15,21 +15,33 @@ function @pid1($_setpoint:number, $_processvalue:number, $_kp:number, $_ki:numbe
 update
 
 	# Hatch controls
-	var $external_hatch = input_number("hatch", 0)
-	var $internal_hatch = input_number(6, 0)
-	if ($external_hatch and !$external_hatch_last_up) or ($internal_hatch and !$internal_hatch_last_up)
+	var $external_hatch_button = input_number("hatch", 0)
+	var $internal_hatch_button = input_number(6, 0)
+	if ($external_hatch_button and !$external_hatch_recent) or ($internal_hatch_button and !$internal_hatch_recent)
 		$hatch_state!!
-	$external_hatch_last_up = $external_hatch
-	$internal_hatch_last_up = $internal_hatch
+	$external_hatch_recent = $external_hatch_button
+	$internal_hatch_recent = $internal_hatch_button
 	output_number("port_hatch_hinge", 0, $hatch_state)
 	output_number("star_hatch_hinge", 0, $hatch_state)
+	output_number(6, 4, !$hatch_state)
+	output_number(6, 5, $hatch_state)
 
-	var $_input_number_6_2 = input_number(6, 2)
-	output_number("ground_anchor", 0, (-($_input_number_6_2 - 1)))
-	var $_input_number_6_1 = input_number(6, 1)
-	output_number("legs", 0, (($_input_number_6_1 * 1.5) - 0.5))
-	var $_input_number_6_3 = input_number(6, 3)
-	output_number("main_thruster", 0, $_input_number_6_3)
+	# Legs control
+	var $legs_toggle = input_number(6, 1)
+	output_number("legs", 0, (($legs_toggle * 1.5) - 0.5))
+	output_number(6, 6, $legs_toggle)
+	output_number(6, 7, !$legs_toggle)
+
+	# Ground anchor control
+	var $ground_anchor_toggle = input_number(6, 2)
+	output_number("ground_anchor", 0, !$ground_anchor_toggle)
+	output_number(6, 8, $ground_anchor_toggle)
+	output_number(6, 9, !$ground_anchor_toggle)
+
+	# Ignition control
+	var $ignition_button = input_number(6, 3)
+	output_number("main_thruster", 0, $ignition_button)
+
 	var $_input_number_10_0 = input_number(10, 0)
 	output_number("h2_turbo_pump", 0, ((($_input_number_10_0 + 1) / 2) / 8))
 	output_number("o2_turbo_pump", 0, (($_input_number_10_0 + 1) / 2))
@@ -59,12 +71,6 @@ update
 	output_number(9, 8, $_input_alias_11)
 	var $_input_alias_12 = input_number("battery_4", 2)
 	output_number(9, 9, $_input_alias_12)
-	output_number(6, 4, !$hatch_state)
-	output_number(6, 5, $hatch_state)
-	output_number(6, 6, $_input_number_6_1)
-	output_number(6, 7, (-($_input_number_6_1 - 1)))
-	output_number(6, 8, $_input_number_6_2)
-	output_number(6, 9, (-($_input_number_6_2 - 1)))
 	output_number(6, 10, ($_input_alias_8 > 0))
 	output_number(6, 11, ($_input_alias_8 == 0))
 	var $_input_number_9_26 = input_number(9, 26)
