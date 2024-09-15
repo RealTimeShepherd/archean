@@ -1,9 +1,5 @@
 const $mynumber1 = 0.000000
 
-var $_rocket_pulse1_last_up = 0
-var $_rocket_pulse2_last_up = 0
-var $_rocket_counter1 = 0
-
 var $hatch_state = 0
 var $external_hatch_last_up = 0
 var $internal_hatch_last_up = 0
@@ -66,8 +62,8 @@ update
 	output_number(9, 8, $_input_alias_11)
 	var $_input_alias_12 = input_number("battery_4", 2)
 	output_number(9, 9, $_input_alias_12)
-	output_number(6, 4, (-(($_rocket_counter1 % 2) - 1)))
-	output_number(6, 5, ($_rocket_counter1 % 2))
+	output_number(6, 4, !$hatch_state)
+	output_number(6, 5, $hatch_state)
 	output_number(6, 6, $_input_number_6_1)
 	output_number(6, 7, (-($_input_number_6_1 - 1)))
 	output_number(6, 8, $_input_number_6_2)
