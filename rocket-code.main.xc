@@ -8,34 +8,34 @@ update
 	; Dash 9 - lower port
 	; Fuel levels
 	var $h2_tank_2_level = input_number("h2_tank_2", 0)
-	output_number(9, 0, (round(($h2_tank_2_level * 140000)) / 100))
+	output_text(9, 0, text("{0.00}", $h2_tank_2_level * 1400))
 	var $h2_tank_1_level = input_number("h2_tank_1", 0)
-	output_number(9, 1, (round(($h2_tank_1_level * 140000)) / 100))
+	output_text(9, 1, text("{0.00}", $h2_tank_1_level * 1400))
 	var $o2_tank_level = input_number("o2_tank", 0)
-	output_number(9, 2, (round(($o2_tank_level * 2240000)) / 100))
+	output_text(9, 2, text("{0.00}", $o2_tank_level * 22400))
 
 	; Fuel flow
 	var $main_engine_throttle = input_number(10, 0)
 	output_number("h2_turbo_pump", 0, (($main_engine_throttle + 1) / 16))
 	output_number("o2_turbo_pump", 0, (($main_engine_throttle + 1) / 2))
 	var $h2_turbo_pump = input_number("h2_turbo_pump", 0)
-	output_number(9, 3, (round(($h2_turbo_pump * 100)) / 100))
+	output_text(9, 3, text("{0.0}", $h2_turbo_pump))
 	var $o2_turbo_pump = input_number("o2_turbo_pump", 0)
-	output_number(9, 4, (round(($o2_turbo_pump * 100)) / 100))
+	output_text(9, 4, text("{0.0}", $o2_turbo_pump))
 
 	; Thrust
 	var $main_thruster = input_number("main_thruster", 0)
-	output_number(9, 5, (round(($main_thruster / 10)) / 100)); Total divsion of 1000 (kN)
+	output_text(9, 5, text("{0.0}", $main_thruster / 1000))
 
 	; Battery levels
 	var $battery_1 = input_number("battery_1", 2)
-	output_number(9, 6, $battery_1)
+	output_text(9, 6, text("{0.00}", $battery_1 * 100))
 	var $battery_2 = input_number("battery_2", 2)
-	output_number(9, 7, $battery_2)
+	output_text(9, 7, text("{0.00}", $battery_2 * 100))
 	var $battery_3 = input_number("battery_3", 2)
-	output_number(9, 8, $battery_3)
+	output_text(9, 8, text("{0.00}", $battery_3 * 100))
 	var $battery_4 = input_number("battery_4", 2)
-	output_number(9, 9, $battery_4)
+	output_text(9, 9, text("{0.00}", $battery_4 * 100))
 
 	; Interior light control
 	var $interior_light_toggle = input_number(9, 26)
