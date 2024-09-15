@@ -17,13 +17,10 @@ update
 	# Hatch controls
 	var $external_hatch = input_number("hatch", 0)
 	var $internal_hatch = input_number(6, 0)
-	var $hatch_pulse = 0
 	if ($external_hatch and !$external_hatch_last_up) or ($internal_hatch and !$internal_hatch_last_up)
-		$hatch_pulse!!
+		$hatch_state!!
 	$external_hatch_last_up = $external_hatch
 	$internal_hatch_last_up = $internal_hatch
-	if $hatch_pulse
-		$hatch_state!!
 	output_number("port_hatch_hinge", 0, $hatch_state)
 	output_number("star_hatch_hinge", 0, $hatch_state)
 
