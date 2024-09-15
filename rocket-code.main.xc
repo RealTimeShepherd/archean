@@ -74,23 +74,44 @@ update
 	output_number(6, 10, ($main_thruster > 0))
 	output_number(6, 11, ($main_thruster == 0))
 
-	; Central dash
-	; G-force display
+	; Central dash display
+	; G-force {0.00}
 	var $g_force_x = input_number(2, 8)
 	var $g_force_y = input_number(2, 9)
 	var $g_force_z = input_number(2, 10)
 	var $g_force_mag = sqrt(($g_force_x * $g_force_x) + ($g_force_y * $g_force_y) + ($g_force_z * $g_force_z))
-	output_number(1, 0, (round(($g_force_mag * 100)) / 100))
+	output_text(1, 0, text("{0.00}", $g_force_mag))
 
-	; Altitude display
-	var $abs_altitude = input_number(3, 0)
-	output_number(1, 2, round(($abs_altitude - 6203000)))
+	; Prograde pitch deg {0.0}
+	var $pro_pitch = input_number(11, 19)
+	output_text(1, 1, text("{0.0}", $pro_pitch))
 
-	; Speed display
-	var $_input_alias_2 = input_number("speed_sensor", 0)
-	output_number(1, 4, round($_input_alias_2))
+	; Heading deg {0.00}
+	var $heading = input_number(11, 6)
+	output_text(1, 2, text("{0.00}", $heading))
+
+	; Vertical speed m/s {0.00}
+	var $v_spd = input_number(11, 1)
+	output_text(1, 3, text("{0.00}", $v_spd))
+
+	; Orbital speed m/s {0.0}
+	var $o_spd = input_number(11, 16)
+	output_text(1, 4, text("{0.0}", $o_spd))
+
+	; Altitude km {0.00}
+	var $alt_sea = input_number(11, 2)
+	output_text(1, 5, text("{0.00}", $alt_sea / 1000))
+
+	; Apogee km {0.00}
+	var $apogee = input_number(11, 18)
+	output_text(1, 6, text("{0.00}", $apogee / 1000))
+
+	; Perigee km {0.00}
+	var $perigee = input_number(11, 17)
+	output_text(1, 7, text("{0.00}", $perigee / 1000))
 
 	; Pilot control
+	; Pitch
 	var $star_pilot_w_s = input_number(4, 1)
 	var $port_pilot_w_s = input_number(8, 1)
 	output_number("rcs_dorsal", 1, -$star_pilot_w_s - $port_pilot_w_s)
@@ -98,6 +119,7 @@ update
 	output_number("rcs_ventral", 1, -$star_pilot_w_s - $port_pilot_w_s)
 	output_number("rcs_ventral", 2, $star_pilot_w_s + $port_pilot_w_s)
 	output_number("main_thruster", 2, -$star_pilot_w_s-$port_pilot_w_s)
+	; Yaw
 	var $star_pilot_a_d = input_number(4, 2)
 	var $port_pilot_a_d = input_number(8, 2)
 	output_number("rcs_port", 1, -$star_pilot_a_d - $port_pilot_a_d)
@@ -105,6 +127,7 @@ update
 	output_number("rcs_starboard", 1, $star_pilot_a_d + $port_pilot_a_d)
 	output_number("rcs_starboard", 2, -$star_pilot_a_d - $port_pilot_a_d)
 	output_number("main_thruster", 1, -$star_pilot_a_d - $port_pilot_a_d)
+	; Roll
 	var $star_pilot_q_e = input_number(4, 5)
 	var $port_pilot_q_e = input_number(8, 5)
 	output_number("rcs_dorsal", 3, -$star_pilot_q_e - $port_pilot_q_e)
