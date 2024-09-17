@@ -16,8 +16,8 @@ update
 
 	; Fuel flow
 	var $main_engine_throttle = input_number(10, 0)
-	output_number("h2_turbo_pump", 0, (($main_engine_throttle + 1) / 16))
-	output_number("o2_turbo_pump", 0, (($main_engine_throttle + 1) / 2))
+	output_number("h2_turbo_pump", 0, (($main_engine_throttle + 1) / 64)) ; This makes 25% of maximum fuel flow
+	output_number("o2_turbo_pump", 0, (($main_engine_throttle + 1) / 8))
 	var $h2_turbo_pump = input_number("h2_turbo_pump", 0)
 	output_text(9, 3, text("{0.0}", $h2_turbo_pump))
 	var $o2_turbo_pump = input_number("o2_turbo_pump", 0)
@@ -71,6 +71,8 @@ update
 	; Ignition control
 	var $ignition_button = input_number(6, 3)
 	output_number("main_thruster", 0, $ignition_button)
+	if $o2_turbo_pump > 0.1 and $o2_turbo_pump < 5
+		output_number("main_thruster", 0, 1)
 	output_number(6, 10, ($main_thruster > 0))
 	output_number(6, 11, ($main_thruster == 0))
 
