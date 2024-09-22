@@ -10,7 +10,7 @@ update
 	if $pilot_w_s == 1
 		$horizontal_state = $horizontal_state - $horizontal_increment
 	if $pilot_w_s == -1
-		$horizontal_state = $horizontal_state 1 $horizontal_increment
+		$horizontal_state = $horizontal_state + $horizontal_increment
 	if $horizontal_state > 1
 		$horizontal_state = 1
 	if $horizontal_state < 0
