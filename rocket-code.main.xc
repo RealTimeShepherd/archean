@@ -118,8 +118,8 @@ update
 	var $port_pilot_w_s = input_number(8, 1)
 	output_number("rcs_dorsal", 1, -$star_pilot_w_s - $port_pilot_w_s)
 	output_number("rcs_dorsal", 2, $star_pilot_w_s + $port_pilot_w_s)
-	output_number("rcs_ventral", 1, -$star_pilot_w_s - $port_pilot_w_s)
-	output_number("rcs_ventral", 2, $star_pilot_w_s + $port_pilot_w_s)
+	output_number("rcs_ventral", 2, -$star_pilot_w_s - $port_pilot_w_s)
+	output_number("rcs_ventral", 1, $star_pilot_w_s + $port_pilot_w_s)
 	output_number("main_thruster", 2, -$star_pilot_w_s-$port_pilot_w_s)
 	; Yaw
 	var $star_pilot_a_d = input_number(4, 2)
@@ -140,3 +140,18 @@ update
 	output_number("rcs_port", 4, $star_pilot_q_e + $port_pilot_q_e)
 	output_number("rcs_ventral", 4, $star_pilot_q_e + $port_pilot_q_e)
 	output_number("rcs_starboard", 4, $star_pilot_q_e + $port_pilot_q_e)
+
+	; RCS pump
+	output_number("rcs_pump", 0, 0)
+	if $star_pilot_w_s <> 0
+		output_number("rcs_pump", 0, 1)
+	if $port_pilot_w_s <> 0
+		output_number("rcs_pump", 0, 1)
+	if $star_pilot_a_d <> 0
+		output_number("rcs_pump", 0, 1)
+	if $port_pilot_a_d <> 0
+		output_number("rcs_pump", 0, 1)
+	if $star_pilot_q_e <> 0
+		output_number("rcs_pump", 0, 0.1)
+	if $port_pilot_q_e <> 0
+		output_number("rcs_pump", 0, 0.1)
