@@ -40,16 +40,16 @@ update
 	; Vertical movement
 	var $pilot_u_d = input_number(11, 3) ; Up and down is space and left Ctrl
 	if $pilot_u_d == -1
-		$vertical_state = $vertical_state - $horizontal_increment
+		$vertical_state = $vertical_state - $vertical_increment
 	if $pilot_u_d == 1
-		$vertical_state = $vertical_state + $horizontal_increment
+		$vertical_state = $vertical_state + $vertical_increment
 	if $vertical_state > 1
 		$vertical_state = 1
 	if $vertical_state < 0
 		$vertical_state = 0
 	output_number("vertical_movement", 0, $vertical_state)
 
-	; Cab rotation
+	; Head rotation
 	var $pilot_e_q = input_number(11, 5)
 	if $pilot_e_q == 1
 		$head_rotational_state = $head_rotational_state - $head_rotational_increment
@@ -60,3 +60,11 @@ update
 	if $head_rotational_state < -0.5
 		$head_rotational_state = -0.5
 	output_number("head_rotate", 0, $head_rotational_state)
+
+	; Head attach/detach
+	var $pilot_attach = input_number(11, 8)
+	if $pilot_attach == 1
+		output_number("head_attach", 0, 1)
+	var $pilot_detach = input_number(11, 9)
+	if $pilot_detach == 1
+		output_number("head_attach", 0, 0)
