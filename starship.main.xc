@@ -43,47 +43,19 @@ update
 	if $legs_state <= 0.5
 		$legs_adj_state = ($legs_state * 2)
 		$legs_adj_state ^= 3
-		output_number("legs", 0, (($legs_adj_state * 0.5) * 1.25) - 0.25)
+		output_number("legs", 0, ((1 - ($legs_adj_state * 0.5)) * 1.25) - 0.25)
 	else
 		$legs_adj_state = ((1 - $legs_state) * 2)
 		$legs_adj_state ^= 3
-		output_number("legs", 0, ((1 - ($legs_adj_state * 0.5)) * 1.25) - 0.25)
-	if $legs_state == 1
+		output_number("legs", 0, (($legs_adj_state * 0.5) * 1.25) - 0.25)
+	if $legs_state == 0
 		output_number("dash_port", 4, 1)
 	else
 		output_number("dash_port", 4, 0)
-	if $legs_state == 0
+	if $legs_state == 1
 		output_number("dash_port", 5, 1)
 	else
 		output_number("dash_port", 5, 0)
-
-	; Legs controls
-	; var $legs_button = input_number("dash_port", 3)
-	; if ($legs_button and !$legs_press)
-	; 	$legs_point!!
-	; $legs_press = $legs_button
-	; if $legs_point > $legs_state
-	; 	$legs_state = $legs_state + $legs_slice
-	; elseif $legs_point < $legs_state
-	; 	$legs_state = $legs_state - $legs_slice
-	; if $legs_state <= 0.5
-	; 	$legs_adj_state = ($legs_state * 2)
-	; 	$legs_adj_state ^= 3
-	; 	output_number("legs", 0, ($legs_adj_state * 0.5) * 1)
-	; else
-	; 	$legs_adj_state = ((1 - $legs_state) * 2)
-	; 	$legs_adj_state ^= 3
-	; 	output_number("legs", 0, (1 - ($legs_adj_state * 0.5)) * 1)
-	; if $legs_state == 1
-	; 	output_number("dash_port", 4, 1)
-	; else
-	; 	output_number("dash_port", 4, 0)
-	; if $legs_state == 0
-	; 	output_number("dash_port", 5, 1)
-	; else
-	; 	output_number("dash_port", 5, 0)
-	output_number("dash_port", 9, $legs_state)
-	output_number("dash_port", 10, $legs_point)
 
 	; Anchors control
 	var $anchors_button = input_number("dash_port", 6)
