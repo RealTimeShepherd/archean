@@ -39,12 +39,20 @@ update
 		$legs_state = $legs_state + $legs_slice
 	if $legs_point < $legs_state
 		$legs_state = $legs_state - $legs_slice
-	output_number("legs", 0, $legs_state)
-	if $legs_state == 0
+	; output_number("legs", 0, $legs_state)
+	if $legs_state <= 0.5
+		$legs_adj_state = ($legs_state * 2)
+		$legs_adj_state ^= 3
+		output_number("legs", 0, (($legs_adj_state * 0.5) * 1.25) - 0.25)
+	else
+		$legs_adj_state = ((1 - $legs_state) * 2)
+		$legs_adj_state ^= 3
+		output_number("legs", 0, ((1 - ($legs_adj_state * 0.5)) * 1.25) - 0.25)
+	if $legs_state == 1
 		output_number("dash_port", 4, 1)
 	else
 		output_number("dash_port", 4, 0)
-	if $legs_state == 1
+	if $legs_state == 0
 		output_number("dash_port", 5, 1)
 	else
 		output_number("dash_port", 5, 0)
