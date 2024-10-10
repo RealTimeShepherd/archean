@@ -171,15 +171,6 @@ update
 		$legs_adj_pos = $legs_adj_state * 1.25 - 0.25
 		$legs_adj_neg = -$legs_adj_state * 1.25 + 0.25
 
-		output_number("dors_lo_hip_pos", 0, $legs_adj_pos)
-		output_number("dors_lo_hip_neg", 0, $legs_adj_neg)
-		output_number("dors_hi_hip_pos", 0, $legs_adj_pos)
-		output_number("dors_hi_hip_neg", 0, $legs_adj_neg)
-		output_number("dors_lo_kne_pos", 0, $legs_adj_neg)
-		output_number("dors_lo_kne_neg", 0, $legs_adj_pos)
-		output_number("dors_hi_kne_pos", 0, $legs_adj_neg)
-		output_number("dors_hi_kne_neg", 0, $legs_adj_pos)
-
 	else
 		$legs_adj_state = ((1 - $legs_state) * 2)
 		$legs_adj_state ^= 3
@@ -187,14 +178,38 @@ update
 		$legs_adj_pos = $legs_adj_state * 1.25 - 0.25
 		$legs_adj_neg = -$legs_adj_state * 1.25 + 0.25
 
-		output_number("dors_lo_hip_pos", 0, $legs_adj_pos)
-		output_number("dors_lo_hip_neg", 0, $legs_adj_neg)
-		output_number("dors_hi_hip_pos", 0, $legs_adj_pos)
-		output_number("dors_hi_hip_neg", 0, $legs_adj_neg)
-		output_number("dors_lo_kne_pos", 0, $legs_adj_neg)
-		output_number("dors_lo_kne_neg", 0, $legs_adj_pos)
-		output_number("dors_hi_kne_pos", 0, $legs_adj_neg)
-		output_number("dors_hi_kne_neg", 0, $legs_adj_pos)
+	output_number("dors_lo_hip_pos", 0, $legs_adj_pos)
+	output_number("dors_lo_hip_neg", 0, $legs_adj_neg)
+	output_number("dors_hi_hip_pos", 0, $legs_adj_pos)
+	output_number("dors_hi_hip_neg", 0, $legs_adj_neg)
+	output_number("dors_lo_kne_pos", 0, $legs_adj_neg)
+	output_number("dors_lo_kne_neg", 0, $legs_adj_pos)
+	output_number("dors_hi_kne_pos", 0, $legs_adj_neg)
+	output_number("dors_hi_kne_neg", 0, $legs_adj_pos)
+	output_number("vent_lo_hip_pos", 0, $legs_adj_pos)
+	output_number("vent_lo_hip_neg", 0, $legs_adj_neg)
+	output_number("vent_hi_hip_pos", 0, $legs_adj_pos)
+	output_number("vent_hi_hip_neg", 0, $legs_adj_neg)
+	output_number("vent_lo_kne_pos", 0, $legs_adj_neg)
+	output_number("vent_lo_kne_neg", 0, $legs_adj_pos)
+	output_number("vent_hi_kne_pos", 0, $legs_adj_neg)
+	output_number("vent_hi_kne_neg", 0, $legs_adj_pos)
+	output_number("port_lo_hip_pos", 0, $legs_adj_pos)
+	output_number("port_lo_hip_neg", 0, $legs_adj_neg)
+	output_number("port_hi_hip_pos", 0, $legs_adj_pos)
+	output_number("port_hi_hip_neg", 0, $legs_adj_neg)
+	output_number("port_lo_kne_pos", 0, $legs_adj_neg)
+	output_number("port_lo_kne_neg", 0, $legs_adj_pos)
+	output_number("port_hi_kne_pos", 0, $legs_adj_neg)
+	output_number("port_hi_kne_neg", 0, $legs_adj_pos)
+	output_number("star_lo_hip_pos", 0, $legs_adj_pos)
+	output_number("star_lo_hip_neg", 0, $legs_adj_neg)
+	output_number("star_hi_hip_pos", 0, $legs_adj_pos)
+	output_number("star_hi_hip_neg", 0, $legs_adj_neg)
+	output_number("star_lo_kne_pos", 0, $legs_adj_neg)
+	output_number("star_lo_kne_neg", 0, $legs_adj_pos)
+	output_number("star_hi_kne_pos", 0, $legs_adj_neg)
+	output_number("star_hi_kne_neg", 0, $legs_adj_pos)
 
 	if $legs_state == 0
 		output_number("dash_port", 4, 1)
