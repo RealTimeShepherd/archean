@@ -16,10 +16,6 @@ var $screen_viewing = "012"
 ; #region user defined functions
 ;---------------------------------------------------------------------------------------------------------------------
 
-function @blank_screen($dash:text, $screen:number)
-	var $s = screen($dash, ($screen_display.$screen):number)
-	$s.blank(black)
-
 function @draw_level_rect($dash:text, $screen:number, $x:number, $y:number, $width:number, $height:number, $thick:number, $lr:number, $lg:number, $lb:number, $vr:number, $vg:number, $vb:number, $fraction:number)
 	var $b = black
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -35,6 +31,33 @@ function @draw_level_rect($dash:text, $screen:number, $x:number, $y:number, $wid
 	$s.draw_rect($x - $w + $t, $y - $h + $t, $x + $w - $t, $y + $h - $t, $b, $b)
 	; inner filled rect in level
 	$s.draw_rect($x - $w + $t, $y + $h - $f, $x + $w - $t, $y + $h - $t, $v, $v)
+
+function @draw_scale($dash:text, $screen:number, $x:number, $y:number, $length:number, $orient:text, $ticks:number, $lr:number, $lg:number, $lb:number, $tr:number, $tg:number, $tb:number, $target:number)
+	$ticks = $ticks - 1
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $l = $length / 2
+	var $c = color($lr, $lg, $lb)
+	var $t = color($tr, $tg, $tb)
+	var $n = $length / $ticks
+	var $v = $l * $target
+	if $orient == "hrz"
+		$s.draw_line($x - $l, $y, $x + $l, $y, $c)
+		$s.draw_line($x, $y, $x, $y + 10, $c)
+		$s.draw_line($x - $l, $y - 4, $x - $l, $y + 5, $c)
+		$s.draw_line($x + $l, $y - 4, $x + $l, $y + 5, $c)
+		for 0, $ticks ($i)
+			$s.draw_line($x - $l + ($i * $n), $y, $x - $l + ($i * $n), $y + 5, $c)
+		$s.draw_line($x + $v - 2, $y - 5, $x + $v, $y, $t)
+		$s.draw_line($x + $v + 2, $y - 5, $x + $v, $y, $t)
+	else
+		$s.draw_line($x, $y - $l, $x, $y + $l, $c)
+		$s.draw_line($x, $y, $x - 10, $y, $c)
+		$s.draw_line($x + 4, $y - $l, $x - 5, $y - $l, $c)
+		$s.draw_line($x + 4, $y + $l, $x - 5, $y + $l, $c)
+		for 0, $ticks ($i)
+			$s.draw_line($x, $y - $l + ($i * $n), $x - 5, $y - $l + ($i * $n), $c)
+		$s.draw_line($x + 5, $y - $v - 2, $x, $y - $v, $t)
+		$s.draw_line($x + 5, $y - $v + 2, $x, $y - $v, $t)
 
 function @draw_battery($dash:text, $screen:number, $x:number, $y:number, $scale:number, $name:text, $label1:text, $label2:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -76,6 +99,20 @@ function @draw_solar_panel($dash:text, $screen:number, $x:number, $y:number, $na
 	$s.write($x - (size($gp) * $w), $y + 21, white, $gp)
 	$s.write($x - (size($label1) * $w), $y - $s.char_h / 2, white, $label1)
 
+function @draw_sun_tracker($dash:text, $screen:number, $x:number, $y:number, $length:number, $orient:text, $ticks:number, $sensor:text)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $vis = input_number($sensor, 1)
+	var $pos = -1
+	if $vis > 0
+		$pos = input_number($sensor, 0)
+	var $p = text("{0.00}", $pos)
+	var $w = $s.char_w / 2
+	@draw_scale($dash, $screen, $x, $y, $length, $orient, $ticks, 255, 255, 255, 255, 255, 0, $pos)
+	if $orient == "hrz"
+		$s.write($x - (size($p) * $w), $y + 11, white, $p)
+	else
+		$s.write($x - (size($p) * $s.char_w) - 10, $y - $s.char_h / 2, white, $p)
+
 function @draw_button($dash:text, $screen:number, $x:number, $y:number, $width:number, $thick:number, $display:number)
 	var $s = screen($dash, ($screen_control.$screen):number)
 	var $b = black
@@ -104,7 +141,8 @@ update
 
 	for 0,2 ($i)
 
-		@blank_screen("main_dash", $i)
+		var $s = screen("main_dash", ($screen_display.$i):number)
+		$s.blank(black)
 
 		@draw_button("main_dash", $i, 30, 30, 40, 5, 0)
 		@draw_button("main_dash", $i, 90, 30, 40, 5, 1)
@@ -118,7 +156,6 @@ update
 		@draw_button("main_dash", $i, 270, 90, 40, 5, 9)
 
 		if $screen_viewing.$i == 0
-			var $s = screen("main_dash", ($screen_display.$i):number)
 			$s.write(174, 136, white, "batteries")
 			@draw_battery("main_dash", $i, 160, 40, 1, "bridge_port_battery", "bridge", "port")
 			@draw_battery("main_dash", $i, 240, 40, 1, "bridge_star_battery", "bridge", "starb'd")
@@ -131,6 +168,9 @@ update
 			@draw_tank("main_dash", $i, 60, 90, "ch4_tank_density", "ch4_tank_volume", "CH4", "CH4 tank")
 			@draw_tank("main_dash", $i, 60, 210, "o2_tank_density", "o2_tank_volume", "O2", "O2 tank")
 		elseif $screen_viewing.$i == 1
+			; $s.write(19, 20, white, text("{0.0}", input_number("solar_sensor_roll", 1)))
+			$s.write(22, 20, white, "sun tracker")
+			$s.write(19, 70, white, "solar panels")
 			@draw_solar_panel("main_dash", $i, 30, 100, "solar_panel_1", "1")
 			@draw_solar_panel("main_dash", $i, 30, 150, "solar_panel_2", "2")
 			@draw_solar_panel("main_dash", $i, 30, 200, "solar_panel_3", "3")
@@ -139,6 +179,8 @@ update
 			@draw_solar_panel("main_dash", $i, 80, 150, "solar_panel_6", "6")
 			@draw_solar_panel("main_dash", $i, 80, 200, "solar_panel_7", "7")
 			@draw_solar_panel("main_dash", $i, 80, 250, "solar_panel_8", "8")
+			@draw_sun_tracker("main_dash", $i, 55, 40, 80, "hrz", 9, "solar_sensor_roll")
+			@draw_sun_tracker("main_dash", $i, 120, 55, 80, "vrt", 9, "solar_sensor_pitch")
 			@draw_battery("main_dash", $i, 140, 160, 1, "cargo_port_battery", "cargo", "port")
 			@draw_battery("main_dash", $i, 180, 160, 1, "bridge_port_battery", "bridge", "port")
 			@draw_battery("main_dash", $i, 220, 160, 1, "bridge_star_battery", "bridge", "starb'd")
