@@ -9,6 +9,10 @@
 var $dash = "main_dash"
 var $screen = 0
 
+; Half char sizes
+var $cw = 3
+var $ch = 4
+
 ; Screens
 var $screen_display = "024"
 var $screen_control = "135"
@@ -207,13 +211,36 @@ function @set_rcs_parameters()
 	output_number("aft_star_rcs", 4, $aft_star_rcs_4)
 	output_number("bay_rcs_pitch_pump", 0, abs($pit_cmd))
 	output_number("bay_rcs_yaw_pump", 0, abs($yaw_cmd))
-	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd) / 2)
+	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd))
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
 ;---------------------------------------------------------------------------------------------------------------------
 ; #region draw screen components
 ;---------------------------------------------------------------------------------------------------------------------
+
+function @draw_button($x:number, $y:number, $width:number, $thick:number, $shape:text, $br:number, $bg:number, $bb:number, $fr:number, $fg:number, $fb:number, $lr:number, $lg:number, $lb:number, $label1:text, $label2:text)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $b = color($br, $bg, $bb)
+	var $f = color($fr, $fg, $fb)
+	var $l = color($lr, $lg, $lb)
+	var $w = $width / 2
+	var $t = $thick / 2
+	if $shape == "square"
+		; outer filled rect in border
+		$s.draw_rect($x - $w - $t, $y - $w - $t, $x + $w + $t, $y + $w + $t, $b, $b)
+		; inner filled rect in fill
+		$s.draw_rect($x - $w + $t, $y - $w + $t, $x + $w - $t, $y + $w - $t, $f, $f)
+	else
+		; outer filled circle in border
+		$s.draw_circle($x, $y, $w + $t, $b, $b)
+		; inner filled circle in fill
+		$s.draw_circle($x, $y, $w - $t, $f, $f)
+	if $label2 == ""
+		$s.write($x - (size($label1) * $cw - 1), $y - $ch + 1, $l, $label1)
+	else
+		$s.write($x - (size($label1) * $cw - 1), $y - $s.char_h + 1, $l, $label1)
+		$s.write($x - (size($label2) * $cw - 1), $y + 1, $l, $label2)
 
 function @draw_level_rect($x:number, $y:number, $width:number, $height:number, $thick:number, $lr:number, $lg:number, $lb:number, $vr:number, $vg:number, $vb:number, $fraction:number)
 	var $b = black
@@ -261,15 +288,14 @@ function @draw_scale($x:number, $y:number, $length:number, $orient:text, $ticks:
 function @draw_battery($x:number, $y:number, $scale:number, $name:text, $label1:text, $label2:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
 	var $c = input_number($name, 2)
-	var $w = $s.char_w / 2
 	var $charge = text("{00.00}%", $c * 100)
 	var $thrput = text("{00.0}W", input_number($name, 3))
 	@draw_level_rect($x, $y, $scale * 40, $scale * 40, $scale, 255, 255, 255, 0, 0, 255, $c)
 	$s.text_size($scale)
-	$s.write($x - (size($label1) * $w), $y - ($scale * 20.5) - ($s.char_h * 2), white, $label1)
-	$s.write($x - (size($label2) * $w), $y - ($scale * 20.5) - $s.char_h, white, $label2)
-	$s.write($x - (size($charge) * $w), $y - ($s.char_h / 2), white, $charge)
-	$s.write($x - (size($thrput) * $w), $y + ($scale * 21.5), white, $thrput)
+	$s.write($x - (size($label1) * $cw), $y - ($scale * 20.5) - ($s.char_h * 2), white, $label1)
+	$s.write($x - (size($label2) * $cw), $y - ($scale * 20.5) - $s.char_h, white, $label2)
+	$s.write($x - (size($charge) * $cw), $y - $ch, white, $charge)
+	$s.write($x - (size($thrput) * $cw), $y + ($scale * 21.5), white, $thrput)
 
 function @draw_tank($x:number, $y:number, $density:text, $volume:text, $type:text, $label1:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -279,24 +305,22 @@ function @draw_tank($x:number, $y:number, $density:text, $volume:text, $type:tex
 	var $v = input_number($volume, 1)
 	var $kg = text("{00}kg", $d * $v)
 	var $comp = text($type & " {00.00}%", ($c.$type):number * 100)
-	var $w = $s.char_w / 2
 	if $type == "O2"
 		@draw_level_rect($x, $y, 80, 100, 2, 255, 255, 255, $o2r, $o2g, $o2b, $l)
 	elseif $type == "CH4"
 		@draw_level_rect($x, $y, 80, 100, 2, 255, 255, 255, $ch4r, $ch4g, $ch4b, $l)
-	$s.write($x - (size($label1) * $w), $y - 51 - $s.char_h, white, $label1)
-	$s.write($x - (size($kg) * $w), $y - ($s.char_h / 2), white, $kg)
-	$s.write($x - (size($comp) * $w), $y + 49 - $s.char_h, white, $comp)
+	$s.write($x - (size($label1) * $cw), $y - 51 - $s.char_h, white, $label1)
+	$s.write($x - (size($kg) * $cw), $y - ($s.char_h / 2), white, $kg)
+	$s.write($x - (size($comp) * $cw), $y + 49 - $s.char_h, white, $comp)
 
 function @draw_solar_panel($x:number, $y:number, $name:text, $label1:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
-	var $w = $s.char_w / 2
 	var $gp = text("{00.0}W", input_number($name, 0))
 	$s.draw_rect($x - 7, $y - 20, $x + 7, $y + 20, gray)
 	$s.draw_rect($x - 20, $y - 7, $x + 20, $y + 7, gray)
 	$s.draw_rect($x - 20, $y - 20, $x + 20, $y + 20, white)
-	$s.write($x - (size($gp) * $w), $y + 21, white, $gp)
-	$s.write($x - (size($label1) * $w), $y - $s.char_h / 2, white, $label1)
+	$s.write($x - (size($gp) * $cw), $y + 21, white, $gp)
+	$s.write($x - (size($label1) * $cw), $y - $s.char_h / 2, white, $label1)
 
 function @draw_sun_tracker($x:number, $y:number, $length:number, $orient:text, $ticks:number, $sensor:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -305,10 +329,9 @@ function @draw_sun_tracker($x:number, $y:number, $length:number, $orient:text, $
 	if $vis > 0
 		$pos = input_number($sensor, 0)
 	var $p = text("{0.00}", $pos)
-	var $w = $s.char_w / 2
 	@draw_scale($x, $y, $length, $orient, $ticks, 255, 255, 255, 255, 255, 0, $pos)
 	if $orient == "hrz"
-		$s.write($x - (size($p) * $w), $y + 11, white, $p)
+		$s.write($x - (size($p) * $cw), $y + 11, white, $p)
 	else
 		$s.write($x - (size($p) * $s.char_w) - 10, $y - $s.char_h / 2, white, $p)
 
@@ -357,7 +380,39 @@ function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number,
 	if $r > 0
 		$s.draw_triangle($x + 5, $y, $x + 5 + $r, $y - 3, $x + 5 + $r, $y + 3, $c, $c)
 
-function @draw_button($x:number, $y:number, $width:number, $thick:number, $display:number)
+function @draw_rcs_fuel_selector($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	if $rcs_fuel == "o2"
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, $o2r / 2, $o2g / 2, $o2b / 2, $o2r, $o2g, $o2b, "O2", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "CH4", "")
+	else
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "O2", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, $ch4r / 2, $ch4g / 2, $ch4b / 2, $ch4r, $ch4g, $ch4b, "CH4", "")
+	$s.write($x - (size("Fuel") * $cw - 1), $y + 5 + $s.char_h, white, "Fuel")
+	; O2 hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$rcs_fuel = "o2"
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$rcs_fuel = "ch4"
+
+function @draw_rcs_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	if $rcs_state == 1
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 128, 0, 0, 255, 0, "ON", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "OFF", "")
+	else
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "ON", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 128, 0, 0, 255, 0, 0, "OFF", "")
+	$s.write($x - (size("RCS") * $cw - 1), $y + 5 + $s.char_h, white, "RCS")
+	; ON hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$rcs_state = 1
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$rcs_state = 0
+
+function @draw_screen_selector($x:number, $y:number, $width:number, $thick:number, $display:number)
 	var $s = screen($dash, ($screen_control.$screen):number)
 	var $b = black
 	var $c = white
@@ -433,6 +488,8 @@ function @draw_screen_2()
 	@draw_rcs(150, 230, "vent", $aft_vent_rcs_1, $aft_vent_rcs_2, $aft_vent_rcs_3, $aft_vent_rcs_4)
 	@draw_rcs(130, 250, "port", $aft_port_rcs_1, $aft_port_rcs_2, $aft_port_rcs_3, $aft_port_rcs_4)
 	@draw_rcs(170, 250, "star", $aft_star_rcs_1, $aft_star_rcs_2, $aft_star_rcs_3, $aft_star_rcs_4)
+	@draw_rcs_control(240, 250)
+	@draw_rcs_fuel_selector(240, 210)
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -514,16 +571,16 @@ update
 		var $s = screen($dash, ($screen_display.$screen):number)
 		$s.blank(black)
 
-		@draw_button(30, 30, 40, 5, 0)
-		@draw_button(90, 30, 40, 5, 1)
-		@draw_button(150, 30, 40, 5, 2)
-		@draw_button(210, 30, 40, 5, 3)
-		@draw_button(270, 30, 40, 5, 4)
-		@draw_button(30, 90, 40, 5, 5)
-		@draw_button(90, 90, 40, 5, 6)
-		@draw_button(150, 90, 40, 5, 7)
-		@draw_button(210, 90, 40, 5, 8)
-		@draw_button(270, 90, 40, 5, 9)
+		@draw_screen_selector(30, 30, 40, 5, 0)
+		@draw_screen_selector(90, 30, 40, 5, 1)
+		@draw_screen_selector(150, 30, 40, 5, 2)
+		@draw_screen_selector(210, 30, 40, 5, 3)
+		@draw_screen_selector(270, 30, 40, 5, 4)
+		@draw_screen_selector(30, 90, 40, 5, 5)
+		@draw_screen_selector(90, 90, 40, 5, 6)
+		@draw_screen_selector(150, 90, 40, 5, 7)
+		@draw_screen_selector(210, 90, 40, 5, 8)
+		@draw_screen_selector(270, 90, 40, 5, 9)
 
 		if $screen_viewing.$i == 0
 			@draw_screen_0()
