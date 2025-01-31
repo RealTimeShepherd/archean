@@ -14,9 +14,9 @@ var $cw = 3
 var $ch = 4
 
 ; Screens
-var $screen_display = "024"
-var $screen_control = "135"
-var $screen_viewing = "012"
+var $screen_display = "024" ; Channel numbers of the display screens
+var $screen_control = "135" ; Channel numbers of the control screens
+var $screen_viewing = "213" ; Currently selected screen per display
 
 ; Colours
 var $o2r = 0
@@ -37,6 +37,18 @@ var $pit_cmd = 0
 var $yaw_cmd = 0
 var $rol_cmd = 0
 
+; Engine parameters
+var $engine_gimbal = 1
+var $engine_throttle = 0
+var $eng_dors_pit = 0
+var $eng_vent_pit = 0
+var $eng_port_pit = 0
+var $eng_stbd_pit = 0
+var $eng_dors_yaw = 0
+var $eng_vent_yaw = 0
+var $eng_port_yaw = 0
+var $eng_stbd_yaw = 0
+
 ; RCS parameters
 var $rcs_state = 1
 var $rcs_fuel = "o2"
@@ -52,10 +64,10 @@ var $fwd_port_rcs_1 = 0
 var $fwd_port_rcs_2 = 0
 var $fwd_port_rcs_3 = 0
 var $fwd_port_rcs_4 = 0
-var $fwd_star_rcs_1 = 0
-var $fwd_star_rcs_2 = 0
-var $fwd_star_rcs_3 = 0
-var $fwd_star_rcs_4 = 0
+var $fwd_stbd_rcs_1 = 0
+var $fwd_stbd_rcs_2 = 0
+var $fwd_stbd_rcs_3 = 0
+var $fwd_stbd_rcs_4 = 0
 var $mid_dors_rcs_1 = 0
 var $mid_dors_rcs_2 = 0
 var $mid_dors_rcs_3 = 0
@@ -68,10 +80,10 @@ var $mid_port_rcs_1 = 0
 var $mid_port_rcs_2 = 0
 var $mid_port_rcs_3 = 0
 var $mid_port_rcs_4 = 0
-var $mid_star_rcs_1 = 0
-var $mid_star_rcs_2 = 0
-var $mid_star_rcs_3 = 0
-var $mid_star_rcs_4 = 0
+var $mid_stbd_rcs_1 = 0
+var $mid_stbd_rcs_2 = 0
+var $mid_stbd_rcs_3 = 0
+var $mid_stbd_rcs_4 = 0
 var $aft_dors_rcs_1 = 0
 var $aft_dors_rcs_2 = 0
 var $aft_dors_rcs_3 = 0
@@ -84,10 +96,10 @@ var $aft_port_rcs_1 = 0
 var $aft_port_rcs_2 = 0
 var $aft_port_rcs_3 = 0
 var $aft_port_rcs_4 = 0
-var $aft_star_rcs_1 = 0
-var $aft_star_rcs_2 = 0
-var $aft_star_rcs_3 = 0
-var $aft_star_rcs_4 = 0
+var $aft_stbd_rcs_1 = 0
+var $aft_stbd_rcs_2 = 0
+var $aft_stbd_rcs_3 = 0
+var $aft_stbd_rcs_4 = 0
 
 ; SAS parameters
 var $sas_pit = 0
@@ -104,6 +116,26 @@ var $sas_rol_mode = "down"
 ; #region parameter functions
 ;---------------------------------------------------------------------------------------------------------------------
 
+function @reset_gimbal_parameters()
+	$eng_dors_pit = 0
+	$eng_vent_pit = 0
+	$eng_port_pit = 0
+	$eng_stbd_pit = 0
+	$eng_dors_yaw = 0
+	$eng_vent_yaw = 0
+	$eng_port_yaw = 0
+	$eng_stbd_yaw = 0
+
+function @set_gimbal_parameters()
+	output_number("eng_dors", 1, $eng_dors_pit)
+	output_number("eng_vent", 1, $eng_vent_pit)
+	output_number("eng_port", 1, $eng_port_pit)
+	output_number("eng_stbd", 1, $eng_stbd_pit)
+	output_number("eng_dors", 2, $eng_dors_yaw)
+	output_number("eng_vent", 2, $eng_vent_yaw)
+	output_number("eng_port", 2, $eng_port_yaw)
+	output_number("eng_stbd", 2, $eng_stbd_yaw)
+
 function @reset_rcs_parameters()
 	$fwd_dors_rcs_1 = 0
 	$fwd_dors_rcs_2 = 0
@@ -117,10 +149,10 @@ function @reset_rcs_parameters()
 	$fwd_port_rcs_2 = 0
 	$fwd_port_rcs_3 = 0
 	$fwd_port_rcs_4 = 0
-	$fwd_star_rcs_1 = 0
-	$fwd_star_rcs_2 = 0
-	$fwd_star_rcs_3 = 0
-	$fwd_star_rcs_4 = 0
+	$fwd_stbd_rcs_1 = 0
+	$fwd_stbd_rcs_2 = 0
+	$fwd_stbd_rcs_3 = 0
+	$fwd_stbd_rcs_4 = 0
 	$mid_dors_rcs_1 = 0
 	$mid_dors_rcs_2 = 0
 	$mid_dors_rcs_3 = 0
@@ -133,10 +165,10 @@ function @reset_rcs_parameters()
 	$mid_port_rcs_2 = 0
 	$mid_port_rcs_3 = 0
 	$mid_port_rcs_4 = 0
-	$mid_star_rcs_1 = 0
-	$mid_star_rcs_2 = 0
-	$mid_star_rcs_3 = 0
-	$mid_star_rcs_4 = 0
+	$mid_stbd_rcs_1 = 0
+	$mid_stbd_rcs_2 = 0
+	$mid_stbd_rcs_3 = 0
+	$mid_stbd_rcs_4 = 0
 	$aft_dors_rcs_1 = 0
 	$aft_dors_rcs_2 = 0
 	$aft_dors_rcs_3 = 0
@@ -149,16 +181,10 @@ function @reset_rcs_parameters()
 	$aft_port_rcs_2 = 0
 	$aft_port_rcs_3 = 0
 	$aft_port_rcs_4 = 0
-	$aft_star_rcs_1 = 0
-	$aft_star_rcs_2 = 0
-	$aft_star_rcs_3 = 0
-	$aft_star_rcs_4 = 0
-	output_number("o2_rcs", 0, 0)
-	output_number("ch4_rcs", 0, 0)
-	if $rcs_fuel == "o2"
-		output_number("o2_rcs", 0, 1)
-	else
-		output_number("ch4_rcs", 0, 1)
+	$aft_stbd_rcs_1 = 0
+	$aft_stbd_rcs_2 = 0
+	$aft_stbd_rcs_3 = 0
+	$aft_stbd_rcs_4 = 0
 
 function @set_rcs_parameters()
 	output_number("fwd_dors_rcs", 1, $fwd_dors_rcs_1)
@@ -173,10 +199,10 @@ function @set_rcs_parameters()
 	output_number("fwd_port_rcs", 2, $fwd_port_rcs_2)
 	output_number("fwd_port_rcs", 3, $fwd_port_rcs_3)
 	output_number("fwd_port_rcs", 4, $fwd_port_rcs_4)
-	output_number("fwd_star_rcs", 1, $fwd_star_rcs_1)
-	output_number("fwd_star_rcs", 2, $fwd_star_rcs_2)
-	output_number("fwd_star_rcs", 3, $fwd_star_rcs_3)
-	output_number("fwd_star_rcs", 4, $fwd_star_rcs_4)
+	output_number("fwd_stbd_rcs", 1, $fwd_stbd_rcs_1)
+	output_number("fwd_stbd_rcs", 2, $fwd_stbd_rcs_2)
+	output_number("fwd_stbd_rcs", 3, $fwd_stbd_rcs_3)
+	output_number("fwd_stbd_rcs", 4, $fwd_stbd_rcs_4)
 	output_number("mid_dors_rcs", 1, $mid_dors_rcs_1)
 	output_number("mid_dors_rcs", 2, $mid_dors_rcs_2)
 	output_number("mid_dors_rcs", 3, $mid_dors_rcs_3)
@@ -189,10 +215,10 @@ function @set_rcs_parameters()
 	output_number("mid_port_rcs", 2, $mid_port_rcs_2)
 	output_number("mid_port_rcs", 3, $mid_port_rcs_3)
 	output_number("mid_port_rcs", 4, $mid_port_rcs_4)
-	output_number("mid_star_rcs", 1, $mid_star_rcs_1)
-	output_number("mid_star_rcs", 2, $mid_star_rcs_2)
-	output_number("mid_star_rcs", 3, $mid_star_rcs_3)
-	output_number("mid_star_rcs", 4, $mid_star_rcs_4)
+	output_number("mid_stbd_rcs", 1, $mid_stbd_rcs_1)
+	output_number("mid_stbd_rcs", 2, $mid_stbd_rcs_2)
+	output_number("mid_stbd_rcs", 3, $mid_stbd_rcs_3)
+	output_number("mid_stbd_rcs", 4, $mid_stbd_rcs_4)
 	output_number("aft_dors_rcs", 1, $aft_dors_rcs_1)
 	output_number("aft_dors_rcs", 2, $aft_dors_rcs_2)
 	output_number("aft_dors_rcs", 3, $aft_dors_rcs_3)
@@ -205,10 +231,10 @@ function @set_rcs_parameters()
 	output_number("aft_port_rcs", 2, $aft_port_rcs_2)
 	output_number("aft_port_rcs", 3, $aft_port_rcs_3)
 	output_number("aft_port_rcs", 4, $aft_port_rcs_4)
-	output_number("aft_star_rcs", 1, $aft_star_rcs_1)
-	output_number("aft_star_rcs", 2, $aft_star_rcs_2)
-	output_number("aft_star_rcs", 3, $aft_star_rcs_3)
-	output_number("aft_star_rcs", 4, $aft_star_rcs_4)
+	output_number("aft_stbd_rcs", 1, $aft_stbd_rcs_1)
+	output_number("aft_stbd_rcs", 2, $aft_stbd_rcs_2)
+	output_number("aft_stbd_rcs", 3, $aft_stbd_rcs_3)
+	output_number("aft_stbd_rcs", 4, $aft_stbd_rcs_4)
 	output_number("bay_rcs_pitch_pump", 0, abs($pit_cmd))
 	output_number("bay_rcs_yaw_pump", 0, abs($yaw_cmd))
 	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd))
@@ -312,6 +338,13 @@ function @draw_tank($x:number, $y:number, $density:text, $volume:text, $type:tex
 	$s.write($x - (size($label1) * $cw), $y - 51 - $s.char_h, white, $label1)
 	$s.write($x - (size($kg) * $cw), $y - ($s.char_h / 2), white, $kg)
 	$s.write($x - (size($comp) * $cw), $y + 49 - $s.char_h, white, $comp)
+
+function @draw_meter($x:number, $volume:text, $type:text)
+	var $l = input_number($volume, 0)
+	if $type == "O2"
+		@draw_level_rect($x, 150, 10, 290, 1, 255, 255, 255, $o2r, $o2g, $o2b, $l)
+	elseif $type == "CH4"
+		@draw_level_rect($x, 150, 10, 290, 1, 255, 255, 255, $ch4r, $ch4g, $ch4b, $l)
 
 function @draw_solar_panel($x:number, $y:number, $name:text, $label1:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -440,13 +473,13 @@ function @draw_screen_0()
 	var $s = screen($dash, ($screen_display.$screen):number)
 	$s.write(174, 136, white, "batteries")
 	@draw_battery(160, 40, 1, "bridge_port_battery", "bridge", "port")
-	@draw_battery(240, 40, 1, "bridge_star_battery", "bridge", "stbd")
+	@draw_battery(240, 40, 1, "bridge_stbd_battery", "bridge", "stbd")
 	@draw_battery(140, 140, 1, "cargo_port_battery", "cargo", "port")
-	@draw_battery(260, 140, 1, "cargo_star_battery", "cargo", "stbd")
+	@draw_battery(260, 140, 1, "cargo_stbd_battery", "cargo", "stbd")
 	@draw_battery(140, 240, 1, "bay_vent_battery", "engine", "ventral")
 	@draw_battery(180, 240, 1, "bay_port_battery", "engine", "port")
 	@draw_battery(220, 240, 1, "bay_dors_battery", "engine", "dorsal")
-	@draw_battery(260, 240, 1, "bay_star_battery", "engine", "stbd")
+	@draw_battery(260, 240, 1, "bay_stbd_battery", "engine", "stbd")
 	@draw_tank(60, 90, "ch4_tank_density", "ch4_tank_volume", "CH4", "CH4 tank")
 	@draw_tank(60, 210, "o2_tank_density", "o2_tank_volume", "O2", "O2 tank")
 
@@ -466,12 +499,12 @@ function @draw_screen_1()
 	@draw_sun_tracker(120, 55, 80, "vrt", 9, "solar_sensor_pitch")
 	@draw_battery(140, 160, 1, "cargo_port_battery", "cargo", "port")
 	@draw_battery(180, 160, 1, "bridge_port_battery", "bridge", "port")
-	@draw_battery(220, 160, 1, "bridge_star_battery", "bridge", "stbd")
-	@draw_battery(260, 160, 1, "cargo_star_battery", "cargo", "stbd")
+	@draw_battery(220, 160, 1, "bridge_stbd_battery", "bridge", "stbd")
+	@draw_battery(260, 160, 1, "cargo_stbd_battery", "cargo", "stbd")
 	@draw_battery(140, 240, 1, "bay_vent_battery", "engine", "ventral")
 	@draw_battery(180, 240, 1, "bay_port_battery", "engine", "port")
 	@draw_battery(220, 240, 1, "bay_dors_battery", "engine", "dorsal")
-	@draw_battery(260, 240, 1, "bay_star_battery", "engine", "stbd")
+	@draw_battery(260, 240, 1, "bay_stbd_battery", "engine", "stbd")
 
 function @draw_screen_2()
 	@draw_tank(60, 90, "ch4_tank_density", "ch4_tank_volume", "CH4", "CH4 tank")
@@ -479,17 +512,21 @@ function @draw_screen_2()
 	@draw_rcs(150, 70, "dors", $fwd_dors_rcs_1, $fwd_dors_rcs_2, $fwd_dors_rcs_3, $fwd_dors_rcs_4)
 	@draw_rcs(150, 30, "vent", $fwd_vent_rcs_1, $fwd_vent_rcs_2, $fwd_vent_rcs_3, $fwd_vent_rcs_4)
 	@draw_rcs(130, 50, "port", $fwd_port_rcs_1, $fwd_port_rcs_2, $fwd_port_rcs_3, $fwd_port_rcs_4)
-	@draw_rcs(170, 50, "star", $fwd_star_rcs_1, $fwd_star_rcs_2, $fwd_star_rcs_3, $fwd_star_rcs_4)
+	@draw_rcs(170, 50, "stbd", $fwd_stbd_rcs_1, $fwd_stbd_rcs_2, $fwd_stbd_rcs_3, $fwd_stbd_rcs_4)
 	@draw_rcs(150, 170, "dors", $mid_dors_rcs_1, $mid_dors_rcs_2, $mid_dors_rcs_3, $mid_dors_rcs_4)
 	@draw_rcs(150, 130, "vent", $mid_vent_rcs_1, $mid_vent_rcs_2, $mid_vent_rcs_3, $mid_vent_rcs_4)
 	@draw_rcs(130, 150, "port", $mid_port_rcs_1, $mid_port_rcs_2, $mid_port_rcs_3, $mid_port_rcs_4)
-	@draw_rcs(170, 150, "star", $mid_star_rcs_1, $mid_star_rcs_2, $mid_star_rcs_3, $mid_star_rcs_4)
+	@draw_rcs(170, 150, "stbd", $mid_stbd_rcs_1, $mid_stbd_rcs_2, $mid_stbd_rcs_3, $mid_stbd_rcs_4)
 	@draw_rcs(150, 270, "dors", $aft_dors_rcs_1, $aft_dors_rcs_2, $aft_dors_rcs_3, $aft_dors_rcs_4)
 	@draw_rcs(150, 230, "vent", $aft_vent_rcs_1, $aft_vent_rcs_2, $aft_vent_rcs_3, $aft_vent_rcs_4)
 	@draw_rcs(130, 250, "port", $aft_port_rcs_1, $aft_port_rcs_2, $aft_port_rcs_3, $aft_port_rcs_4)
-	@draw_rcs(170, 250, "star", $aft_star_rcs_1, $aft_star_rcs_2, $aft_star_rcs_3, $aft_star_rcs_4)
+	@draw_rcs(170, 250, "stbd", $aft_stbd_rcs_1, $aft_stbd_rcs_2, $aft_stbd_rcs_3, $aft_stbd_rcs_4)
 	@draw_rcs_control(240, 250)
 	@draw_rcs_fuel_selector(240, 210)
+
+function @draw_screen_3()
+	@draw_meter(20, "ch4_tank_volume", "CH4")
+	@draw_meter(280, "o2_tank_volume", "O2")
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -526,6 +563,7 @@ update
 	; Execute RCS commands
 	if $rcs_state == 1
 		@reset_rcs_parameters()
+		; RCS pitch
 		if $pit_cmd > 0
 			$fwd_dors_rcs_2 = $pit_cmd
 			$aft_dors_rcs_2 = $pit_cmd
@@ -536,28 +574,49 @@ update
 			$aft_dors_rcs_1 = -$pit_cmd
 			$fwd_vent_rcs_2 = -$pit_cmd
 			$aft_vent_rcs_2 = -$pit_cmd
+		; RCS yaw
 		if $yaw_cmd > 0
 			$fwd_port_rcs_2 = $yaw_cmd
 			$aft_port_rcs_2 = $yaw_cmd
-			$fwd_star_rcs_1 = $yaw_cmd
-			$aft_star_rcs_1 = $yaw_cmd
+			$fwd_stbd_rcs_1 = $yaw_cmd
+			$aft_stbd_rcs_1 = $yaw_cmd
 		elseif $yaw_cmd < 0
 			$fwd_port_rcs_1 = -$yaw_cmd
 			$aft_port_rcs_1 = -$yaw_cmd
-			$fwd_star_rcs_2 = -$yaw_cmd
-			$aft_star_rcs_2 = -$yaw_cmd
+			$fwd_stbd_rcs_2 = -$yaw_cmd
+			$aft_stbd_rcs_2 = -$yaw_cmd
+		; RCS roll
 		if $rol_cmd > 0
 			$mid_dors_rcs_4 = $rol_cmd
 			$mid_vent_rcs_4 = $rol_cmd
 			$mid_port_rcs_4 = $rol_cmd
-			$mid_star_rcs_4 = $rol_cmd
+			$mid_stbd_rcs_4 = $rol_cmd
 		elseif $rol_cmd < 0
 			$mid_dors_rcs_3 = -$rol_cmd
 			$mid_vent_rcs_3 = -$rol_cmd
 			$mid_port_rcs_3 = -$rol_cmd
-			$mid_star_rcs_3 = -$rol_cmd
+			$mid_stbd_rcs_3 = -$rol_cmd
 		@set_rcs_parameters()
+		output_number("o2_rcs", 0, 0)
+		output_number("ch4_rcs", 0, 0)
+		if $rcs_fuel == "o2"
+			output_number("o2_rcs", 0, 1)
+		else
+			output_number("ch4_rcs", 0, 1)
 
+	; Execute Engine gimballing commands
+	if $engine_gimbal == 1
+		$eng_dors_pit = -$pit_cmd * 0.75
+		$eng_vent_pit = -$pit_cmd * 0.75
+		$eng_port_pit = -$pit_cmd * 0.75 - $rol_cmd * 0.25
+		$eng_stbd_pit = -$pit_cmd * 0.75 + $rol_cmd * 0.25
+		$eng_dors_yaw = $yaw_cmd * 0.75 - $rol_cmd * 0.25
+		$eng_vent_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
+		$eng_port_yaw = $yaw_cmd * 0.75
+		$eng_stbd_yaw = $yaw_cmd * 0.75
+		@set_gimbal_parameters()
+	else
+		@reset_gimbal_parameters()
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -568,8 +627,9 @@ update
 	for 0,2 ($i)
 
 		$screen = $i
-		var $s = screen($dash, ($screen_display.$screen):number)
-		$s.blank(black)
+		var $sd = screen($dash, ($screen_display.$screen):number)
+		var $sc = screen($dash, ($screen_control.$screen):number)
+		$sd.blank(black)
 
 		@draw_screen_selector(30, 30, 40, 5, 0)
 		@draw_screen_selector(90, 30, 40, 5, 1)
@@ -581,6 +641,8 @@ update
 		@draw_screen_selector(150, 90, 40, 5, 7)
 		@draw_screen_selector(210, 90, 40, 5, 8)
 		@draw_screen_selector(270, 90, 40, 5, 9)
+		$sc.draw_line(0, 0, 0, 120, white)
+		$sc.draw_line(300, 0, 300, 120, white)
 
 		if $screen_viewing.$i == 0
 			@draw_screen_0()
@@ -588,6 +650,8 @@ update
 			@draw_screen_1()
 		elseif $screen_viewing.$i == 2
 			@draw_screen_2()
+		elseif $screen_viewing.$i == 3
+			@draw_screen_3()
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
