@@ -26,6 +26,10 @@ var $ch4r = 178
 var $ch4g = 34
 var $ch4b = 34
 
+; Legs
+var $leg_deploy = 0
+var $leg_change = 0
+
 ; Flight control parameters
 var $cmndr_pit = 0
 var $pilot_pit = 0
@@ -115,6 +119,14 @@ var $sas_rol_mode = "down"
 ;---------------------------------------------------------------------------------------------------------------------
 ; #region parameter functions
 ;---------------------------------------------------------------------------------------------------------------------
+
+function @set_leg_parameters()
+	if $leg_deploy == 0
+		output_number("leg_dors_l_hinge", 0, -1)
+		output_number("leg_dors_r_hinge", 0, 1)
+	else
+		output_number("leg_dors_l_hinge", 0, 0)
+		output_number("leg_dors_r_hinge", 0, 0)
 
 function @reset_gimbal_parameters()
 	$eng_dors_pit = 0
@@ -311,6 +323,22 @@ function @draw_scale($x:number, $y:number, $length:number, $orient:text, $ticks:
 		$s.draw_line($x + 5, $y - $v - 2, $x, $y - $v, $t)
 		$s.draw_line($x + 5, $y - $v + 2, $x, $y - $v, $t)
 
+function @draw_toggle($x:number, $y:number, $lr:number, $lg:number, $lb:number, $rr:number, $rg:number, $rb:number, $l_label:text, $r_label:text, $label:text, $state:number, $l_state:number):number
+	var $s = screen($dash, ($screen_display.$screen):number)
+	if $state == $l_state
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, $lr / 2, $lg / 2, $lb / 2, $lr, $lg, $lb, $l_label, "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, $r_label, "")
+	else
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, $l_label, "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, $rr / 2, $rg / 2, $rb / 2, $rr, $rg, $rb, $r_label, "")
+	$s.write($x - (size($label) * $cw - 1), $y + 5 + $s.char_h, white, $label)
+	; LEFT hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		return $l_state
+	; RIGHT hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		return !$l_state
+
 function @draw_battery($x:number, $y:number, $scale:number, $name:text, $label1:text, $label2:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
 	var $c = input_number($name, 2)
@@ -445,6 +473,24 @@ function @draw_rcs_control($x:number, $y:number)
 	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
 		$rcs_state = 0
 
+function @draw_leg_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	if $leg_deploy == 0
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 128, 0, 0, 255, 0, "IN", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "OUT", "")
+	else
+		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "IN", "")
+		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 128, 0, 0, 255, 0, 0, "OUT", "")
+	$s.write($x - (size("Legs") * $cw - 1), $y + 5 + $s.char_h, white, "Legs")
+	; ON hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$leg_deploy = 0
+		$leg_change = 1
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$leg_deploy = 1
+		$leg_change = 1
+
 function @draw_screen_selector($x:number, $y:number, $width:number, $thick:number, $display:number)
 	var $s = screen($dash, ($screen_control.$screen):number)
 	var $b = black
@@ -523,6 +569,7 @@ function @draw_screen_2()
 	@draw_rcs(170, 250, "stbd", $aft_stbd_rcs_1, $aft_stbd_rcs_2, $aft_stbd_rcs_3, $aft_stbd_rcs_4)
 	@draw_rcs_control(240, 250)
 	@draw_rcs_fuel_selector(240, 210)
+	@draw_leg_control(240, 170)
 
 function @draw_screen_3()
 	@draw_meter(20, "ch4_tank_volume", "CH4")
@@ -541,6 +588,11 @@ update
 ;---------------------------------------------------------------------------------------------------------------------
 ; #region control determination
 ;---------------------------------------------------------------------------------------------------------------------
+
+	; Leg change state
+	if $leg_change == 1
+		$leg_change = 0
+		@set_leg_parameters()
 
 	; Determine pitch command
 	if $sas_pit == 0
