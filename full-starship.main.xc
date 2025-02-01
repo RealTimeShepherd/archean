@@ -18,7 +18,10 @@ var $screen_display = "024" ; Channel numbers of the display screens
 var $screen_control = "135" ; Channel numbers of the control screens
 var $screen_viewing = "213" ; Currently selected screen per display
 
-; Colours
+; Lamps
+var $lamp_states = ".bridge_nose_lamp{0}.bridge_cntr_lamp{0}.bridge_port_lamp{0}.bridge_stbd_lamp{0}.cargo_cntr_lamp{0}.cargo_port_lamp{0}.cargo_stbd_lamp{0}"
+
+; Fuel colours
 var $o2r = 0
 var $o2g = 128
 var $o2b = 255
@@ -278,10 +281,13 @@ function @set_rcs_parameters()
 	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd))
 
 function @get_duration($secs:number):text
+	if $secs > 3600
+		var $hours = floor($secs / 3600)
+		return text("{00}", $hours) & text(":{00}", floor(($secs - ($hours * 3600)) / 60)) & text(":{00}", $secs % 60)
 	if $secs > 60
-		return text("{00}", floor($secs / 60)) & text(":{00}", $secs % 60)
+		return text("00:{00}", floor($secs / 60)) & text(":{00}", $secs % 60)
 	else
-		return text("00:{00}", $secs)
+		return text("00:00:{00}", $secs)
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -368,7 +374,7 @@ function @draw_toggle($x:number, $y:number, $lr:number, $lg:number, $lb:number, 
 function @write_rate($x:number, $y:number, $resource:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
 	var $kgs = ""
-	var $rem_time = "--:--"
+	var $rem_time = "--:--:--"
 	if $resource == "O2"
 		$kgs = text("{00.0}kg/s", $engine_throttle * 400)
 		if $engine_throttle > 0
@@ -387,6 +393,18 @@ function @write_gforce($x:number, $y:number)
 	$s.text_size(2)
 	var $g = text("{0.0}g", $g_force_mag)
 	$s.write($x - (size($g) * ($s.char_w / 2)), $y - ($s.char_h / 2), white, $g)
+
+function @draw_lamp($x:number, $y:number, $r:number, $name:text)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $lamp_state = ($lamp_states.$name):number
+	$s.draw_circle($x, $y, $r, white)
+	if $lamp_state == 1
+		$s.draw_circle($x, $y, $r - 1, yellow, yellow)
+	; hit detection
+	if $s.button_circle($x, $y, $r, color(0, 0, 0, 0))
+		$lamp_state!!
+		$lamp_states.$name = $lamp_state
+		output_number($name, 0, $lamp_state)
 
 function @draw_battery($x:number, $y:number, $scale:number, $name:text, $label1:text, $label2:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -511,7 +529,6 @@ function @draw_throttle($x:number, $y:number)
 	for 1, 10 ($t)
 		if $s.button_rect($x - 5, $b - 10 - ($t * 10), $x + 5, $b - ($t * 10), color(0, 0, 0, 0))
 			$engine_throttle = $t / 10
-
 
 function @draw_throttle_control($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -639,6 +656,15 @@ function @draw_screen_1()
 	@draw_battery(180, 240, 1, "bay_port_battery", "engine", "port")
 	@draw_battery(220, 240, 1, "bay_dors_battery", "engine", "dorsal")
 	@draw_battery(260, 240, 1, "bay_stbd_battery", "engine", "stbd")
+	$s.write(182, 36, white, "Bridge")
+	@draw_lamp(200, 20, 10, "bridge_nose_lamp")
+	@draw_lamp(200, 60, 10, "bridge_cntr_lamp")
+	@draw_lamp(160, 40, 10, "bridge_port_lamp")
+	@draw_lamp(240, 40, 10, "bridge_stbd_lamp")
+	$s.write(185, 76, white, "Cargo")
+	@draw_lamp(200, 100, 10, "cargo_cntr_lamp")
+	@draw_lamp(160, 100, 10, "cargo_port_lamp")
+	@draw_lamp(240, 100, 10, "cargo_stbd_lamp")
 
 function @draw_screen_2()
 	@draw_tank(60, 90, "ch4_tank_density", "ch4_tank_volume", "CH4", "CH4 tank")
