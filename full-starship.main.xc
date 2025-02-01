@@ -26,9 +26,19 @@ var $ch4r = 178
 var $ch4g = 34
 var $ch4b = 34
 
-; Legs
-var $leg_deploy = 0
+; G-force
+var $g_force_x = 0
+var $g_force_y = 0
+var $g_force_z = 0
+var $g_force_mag = 0
+
+; Legs & anchors
+storage var $leg_state:number
+var $leg_deploy = 1
 var $leg_change = 0
+storage var $anc_state:number
+var $anc_deploy = 1
+var $anc_change = 0
 
 ; Flight control parameters
 var $cmndr_pit = 0
@@ -55,7 +65,7 @@ var $eng_stbd_yaw = 0
 
 ; RCS parameters
 var $rcs_state = 1
-var $rcs_fuel = "o2"
+var $rcs_fuel = 0 ; 0 = o2, 1 = ch4
 var $fwd_dors_rcs_1 = 0
 var $fwd_dors_rcs_2 = 0
 var $fwd_dors_rcs_3 = 0
@@ -120,13 +130,29 @@ var $sas_rol_mode = "down"
 ; #region parameter functions
 ;---------------------------------------------------------------------------------------------------------------------
 
+function @set_anchor_parameters()
+	output_number("port_anchor", 0, $anc_deploy)
+	output_number("stbd_anchor", 0, $anc_deploy)
+
 function @set_leg_parameters()
 	if $leg_deploy == 0
 		output_number("leg_dors_l_hinge", 0, -1)
+		output_number("leg_vent_l_hinge", 0, -1)
+		output_number("leg_port_l_hinge", 0, -1)
+		output_number("leg_stbd_l_hinge", 0, -1)
 		output_number("leg_dors_r_hinge", 0, 1)
+		output_number("leg_vent_r_hinge", 0, 1)
+		output_number("leg_port_r_hinge", 0, 1)
+		output_number("leg_stbd_r_hinge", 0, 1)
 	else
-		output_number("leg_dors_l_hinge", 0, 0)
-		output_number("leg_dors_r_hinge", 0, 0)
+		output_number("leg_dors_l_hinge", 0, 0.126)
+		output_number("leg_vent_l_hinge", 0, 0.126)
+		output_number("leg_port_l_hinge", 0, 0.126)
+		output_number("leg_stbd_l_hinge", 0, 0.126)
+		output_number("leg_dors_r_hinge", 0, -0.126)
+		output_number("leg_vent_r_hinge", 0, -0.126)
+		output_number("leg_port_r_hinge", 0, -0.126)
+		output_number("leg_stbd_r_hinge", 0, -0.126)
 
 function @reset_gimbal_parameters()
 	$eng_dors_pit = 0
@@ -251,6 +277,12 @@ function @set_rcs_parameters()
 	output_number("bay_rcs_yaw_pump", 0, abs($yaw_cmd))
 	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd))
 
+function @get_duration($secs:number):text
+	if $secs > 60
+		return text("{00}", floor($secs / 60)) & text(":{00}", $secs % 60)
+	else
+		return text("00:{00}", $secs)
+
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
 ;---------------------------------------------------------------------------------------------------------------------
@@ -323,7 +355,7 @@ function @draw_scale($x:number, $y:number, $length:number, $orient:text, $ticks:
 		$s.draw_line($x + 5, $y - $v - 2, $x, $y - $v, $t)
 		$s.draw_line($x + 5, $y - $v + 2, $x, $y - $v, $t)
 
-function @draw_toggle($x:number, $y:number, $lr:number, $lg:number, $lb:number, $rr:number, $rg:number, $rb:number, $l_label:text, $r_label:text, $label:text, $state:number, $l_state:number):number
+function @draw_toggle($x:number, $y:number, $lr:number, $lg:number, $lb:number, $rr:number, $rg:number, $rb:number, $l_label:text, $r_label:text, $label:text, $state:number, $l_state:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
 	if $state == $l_state
 		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, $lr / 2, $lg / 2, $lb / 2, $lr, $lg, $lb, $l_label, "")
@@ -332,12 +364,29 @@ function @draw_toggle($x:number, $y:number, $lr:number, $lg:number, $lb:number, 
 		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, $l_label, "")
 		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, $rr / 2, $rg / 2, $rb / 2, $rr, $rg, $rb, $r_label, "")
 	$s.write($x - (size($label) * $cw - 1), $y + 5 + $s.char_h, white, $label)
-	; LEFT hit detection
-	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
-		return $l_state
-	; RIGHT hit detection
-	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
-		return !$l_state
+
+function @write_rate($x:number, $y:number, $resource:text)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $kgs = ""
+	var $rem_time = "--:--"
+	if $resource == "O2"
+		$kgs = text("{00.0}kg/s", $engine_throttle * 400)
+		if $engine_throttle > 0
+			input_number("o2_tank_density", 0)
+			$rem_time = @get_duration(input_number("o2_tank_volume", 1) * input_number("o2_tank_density", 0) / ($engine_throttle * 400))
+	elseif $resource == "CH4"
+		$kgs = text("{00.0}kg/s", $engine_throttle * 100)
+		if $engine_throttle > 0
+			$rem_time = @get_duration(input_number("ch4_tank_volume", 1) * input_number("ch4_tank_density", 0) / ($engine_throttle * 100))
+	$s.write($x - (size($resource) * $cw - 1), $y - $ch, white, $resource)
+	$s.write($x - (size($kgs) * $cw - 1), $y + $ch, white, $kgs)
+	$s.write($x - (size($rem_time) * $cw - 1), $y + 3 * $ch, white, $rem_time)
+
+function @write_gforce($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	$s.text_size(2)
+	var $g = text("{0.0}g", $g_force_mag)
+	$s.write($x - (size($g) * ($s.char_w / 2)), $y - ($s.char_h / 2), white, $g)
 
 function @draw_battery($x:number, $y:number, $scale:number, $name:text, $label1:text, $label2:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -364,7 +413,7 @@ function @draw_tank($x:number, $y:number, $density:text, $volume:text, $type:tex
 	elseif $type == "CH4"
 		@draw_level_rect($x, $y, 80, 100, 2, 255, 255, 255, $ch4r, $ch4g, $ch4b, $l)
 	$s.write($x - (size($label1) * $cw), $y - 51 - $s.char_h, white, $label1)
-	$s.write($x - (size($kg) * $cw), $y - ($s.char_h / 2), white, $kg)
+	$s.write($x - (size($kg) * $cw), $y - $ch, white, $kg)
 	$s.write($x - (size($comp) * $cw), $y + 49 - $s.char_h, white, $comp)
 
 function @draw_meter($x:number, $volume:text, $type:text)
@@ -381,7 +430,7 @@ function @draw_solar_panel($x:number, $y:number, $name:text, $label1:text)
 	$s.draw_rect($x - 20, $y - 7, $x + 20, $y + 7, gray)
 	$s.draw_rect($x - 20, $y - 20, $x + 20, $y + 20, white)
 	$s.write($x - (size($gp) * $cw), $y + 21, white, $gp)
-	$s.write($x - (size($label1) * $cw), $y - $s.char_h / 2, white, $label1)
+	$s.write($x - (size($label1) * $cw), $y - $ch, white, $label1)
 
 function @draw_sun_tracker($x:number, $y:number, $length:number, $orient:text, $ticks:number, $sensor:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -394,7 +443,7 @@ function @draw_sun_tracker($x:number, $y:number, $length:number, $orient:text, $
 	if $orient == "hrz"
 		$s.write($x - (size($p) * $cw), $y + 11, white, $p)
 	else
-		$s.write($x - (size($p) * $s.char_w) - 10, $y - $s.char_h / 2, white, $p)
+		$s.write($x - (size($p) * $s.char_w) - 10, $y - $ch, white, $p)
 
 function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number, $three:number, $four:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -404,9 +453,9 @@ function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number,
 	var $l = 0
 	var $r = 0
 	var $c = color(255, 255, 255)
-	if $rcs_fuel == "o2"
+	if $rcs_fuel == 0
 		$c = color($o2r, $o2g, $o2b)
-	elseif $rcs_fuel == "ch4"
+	elseif $rcs_fuel == 1
 		$c = color($ch4r, $ch4g, $ch4b)
 	if $orient == "dors"
 		$u = $one * $m
@@ -441,31 +490,64 @@ function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number,
 	if $r > 0
 		$s.draw_triangle($x + 5, $y, $x + 5 + $r, $y - 3, $x + 5 + $r, $y + 3, $c, $c)
 
+function @draw_engine($x:number, $y:number, $gx:number, $gy:number, $r:number, $eng:text, $label:text)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $kn = input_number($eng, 0) / 1000
+	var $thrust = text("{00.00}kN", $kn)
+	if $engine_throttle > 0
+		$s.draw_circle($x + $gx, $y + $gy, $r * $kn / 1800, blue, blue)
+		$s.draw_circle($x, $y, $r, green)
+	else
+		$s.draw_circle($x, $y, $r, red)
+	$s.draw_circle($x + $gx, $y + $gy, 2, white, black)
+	$s.write($x - (size($label) * $cw - 1), $y - $r - $s.char_h, white, $label)
+	$s.write($x - (size($thrust) * $cw - 1), $y + $r + 1, white, $thrust)
+
+function @draw_throttle($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	@draw_level_rect($x, $y, 10, 100, 1, 255, 255, 255, 255, 255, 255, $engine_throttle)
+	; throttle hit boxes
+	var $b = $y + 60
+	for 1, 10 ($t)
+		if $s.button_rect($x - 5, $b - 10 - ($t * 10), $x + 5, $b - ($t * 10), color(0, 0, 0, 0))
+			$engine_throttle = $t / 10
+
+
+function @draw_throttle_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	if $engine_throttle == 0
+		@draw_button($x - 20, $y, 20, 1, "square", 255, 255, 255, 128, 0, 0, 255, 0, 0, "CUT", "")
+		@draw_button($x, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "BAL", "")
+		@draw_button($x + 20, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "FUL", "")
+	elseif $engine_throttle == 1
+		@draw_button($x - 20, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "CUT", "")
+		@draw_button($x, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "BAL", "")
+		@draw_button($x + 20, $y, 20, 1, "square", 255, 255, 255, 0, 125, 0, 0, 255, 0, "FUL", "")
+	else
+		@draw_button($x - 20, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "CUT", "")
+		@draw_button($x, $y, 20, 1, "square", 255, 255, 255, 128, 64, 0, 255, 128, 0, "BAL", "")
+		@draw_button($x + 20, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "FUL", "")
+	$s.write($x - (size("Throttle") * $cw - 1), $y + 5 + $s.char_h, white, "Throttle")
+	; CUT hit detection
+	if $s.button_rect($x - 30, $y - 10, $x - 10, $y + 10, color(0, 0, 0, 0))
+		$engine_throttle = 0
+	; FULL hit detection
+	if $s.button_rect($x + 10, $y - 10, $x + 30, $y + 10, color(0, 0, 0, 0))
+		$engine_throttle = 1
+
 function @draw_rcs_fuel_selector($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
-	if $rcs_fuel == "o2"
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, $o2r / 2, $o2g / 2, $o2b / 2, $o2r, $o2g, $o2b, "O2", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "CH4", "")
-	else
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "O2", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, $ch4r / 2, $ch4g / 2, $ch4b / 2, $ch4r, $ch4g, $ch4b, "CH4", "")
-	$s.write($x - (size("Fuel") * $cw - 1), $y + 5 + $s.char_h, white, "Fuel")
+	@draw_toggle($x, $y, $o2r, $o2g, $o2b, $ch4r, $ch4g, $ch4b, "O2", "CH4", "Fuel", $rcs_fuel, 0)
 	; O2 hit detection
 	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
-		$rcs_fuel = "o2"
+		$rcs_fuel = 0
 	; OFF hit detection
 	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
-		$rcs_fuel = "ch4"
+		$rcs_fuel = 1
 
 function @draw_rcs_control($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
-	if $rcs_state == 1
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 128, 0, 0, 255, 0, "ON", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "OFF", "")
-	else
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "ON", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 128, 0, 0, 255, 0, 0, "OFF", "")
-	$s.write($x - (size("RCS") * $cw - 1), $y + 5 + $s.char_h, white, "RCS")
+	@draw_toggle($x, $y, 0, 255, 0, 255, 0, 0, "ON", "OFF", "RCS", $rcs_state, 1)
 	; ON hit detection
 	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
 		$rcs_state = 1
@@ -475,13 +557,7 @@ function @draw_rcs_control($x:number, $y:number)
 
 function @draw_leg_control($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
-	if $leg_deploy == 0
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 128, 0, 0, 255, 0, "IN", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "OUT", "")
-	else
-		@draw_button($x - 10, $y, 20, 1, "square", 255, 255, 255, 0, 0, 0, 128, 128, 128, "IN", "")
-		@draw_button($x + 10, $y, 20, 1, "square", 255, 255, 255, 128, 0, 0, 255, 0, 0, "OUT", "")
-	$s.write($x - (size("Legs") * $cw - 1), $y + 5 + $s.char_h, white, "Legs")
+	@draw_toggle($x, $y, 0, 255, 0, 255, 0, 0, "RET", "DEP", "Legs", $leg_deploy, 0)
 	; ON hit detection
 	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
 		$leg_deploy = 0
@@ -490,6 +566,18 @@ function @draw_leg_control($x:number, $y:number)
 	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
 		$leg_deploy = 1
 		$leg_change = 1
+
+function @draw_anchor_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	@draw_toggle($x, $y, 0, 255, 0, 255, 0, 0, "FRE", "ANC", "Anchor", $anc_deploy, 0)
+	; ON hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$anc_deploy = 0
+		$anc_change = 1
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$anc_deploy = 1
+		$anc_change = 1
 
 function @draw_screen_selector($x:number, $y:number, $width:number, $thick:number, $display:number)
 	var $s = screen($dash, ($screen_control.$screen):number)
@@ -570,10 +658,20 @@ function @draw_screen_2()
 	@draw_rcs_control(240, 250)
 	@draw_rcs_fuel_selector(240, 210)
 	@draw_leg_control(240, 170)
+	@draw_anchor_control(240, 130)
 
 function @draw_screen_3()
 	@draw_meter(20, "ch4_tank_volume", "CH4")
 	@draw_meter(280, "o2_tank_volume", "O2")
+	@draw_engine(150, 50, $eng_dors_yaw * 6, -$eng_dors_pit * 6, 40, "eng_dors", "Dors")
+	@draw_engine(80, 120, $eng_port_yaw * 6, -$eng_port_pit * 6, 40, "eng_port", "Port")
+	@draw_engine(220, 120, $eng_stbd_yaw * 6, -$eng_stbd_pit * 6, 40, "eng_stbd", "Stbd")
+	@draw_engine(150, 190, $eng_vent_yaw * 6, -$eng_vent_pit * 6, 40, "eng_vent", "Vent")
+	@draw_throttle(220, 230)
+	@draw_throttle_control(150, 270)
+	@write_rate(55, 280, "CH4")
+	@write_rate(245, 280, "O2")
+	@write_gforce(150, 120)
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -589,10 +687,37 @@ update
 ; #region control determination
 ;---------------------------------------------------------------------------------------------------------------------
 
+	; G-force determination
+	$g_force_x = input_number("vehicle_physics_sensor", 8)
+	$g_force_y = input_number("vehicle_physics_sensor", 9)
+	$g_force_z = input_number("vehicle_physics_sensor", 10)
+	$g_force_mag = sqrt(($g_force_x * $g_force_x) + ($g_force_y * $g_force_y) + ($g_force_z * $g_force_z))
+
 	; Leg change state
 	if $leg_change == 1
 		$leg_change = 0
 		@set_leg_parameters()
+
+	; Anchor change state
+	if $anc_change == 1
+		$anc_change = 0
+		@set_anchor_parameters()
+
+	; Engine ignition
+	if $engine_throttle > 0
+		if input_number("eng_dors", 0) == 0
+			output_number("eng_dors", 0, 1)
+		if input_number("eng_vent", 0) == 0
+			output_number("eng_vent", 0, 1)
+		if input_number("eng_port", 0) == 0
+			output_number("eng_port", 0, 1)
+		if input_number("eng_stbd", 0) == 0
+			output_number("eng_stbd", 0, 1)
+		output_number("bay_ch4_pump", 0, $engine_throttle)
+		output_number("bay_dors_o2_pump", 0, $engine_throttle)
+		output_number("bay_vent_o2_pump", 0, $engine_throttle)
+		output_number("bay_port_o2_pump", 0, $engine_throttle)
+		output_number("bay_stbd_o2_pump", 0, $engine_throttle)
 
 	; Determine pitch command
 	if $sas_pit == 0
@@ -651,7 +776,7 @@ update
 		@set_rcs_parameters()
 		output_number("o2_rcs", 0, 0)
 		output_number("ch4_rcs", 0, 0)
-		if $rcs_fuel == "o2"
+		if $rcs_fuel == 0
 			output_number("o2_rcs", 0, 1)
 		else
 			output_number("ch4_rcs", 0, 1)
