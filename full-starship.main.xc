@@ -57,14 +57,23 @@ var $rol_cmd = 0
 ; Engine parameters
 var $engine_gimbal = 1
 var $engine_throttle = 0
-var $eng_dors_pit = 0
-var $eng_vent_pit = 0
-var $eng_port_pit = 0
-var $eng_stbd_pit = 0
-var $eng_dors_yaw = 0
-var $eng_vent_yaw = 0
-var $eng_port_yaw = 0
-var $eng_stbd_yaw = 0
+var $dia_eng_state = 1
+var $squ1_eng_pit = 0
+var $squ2_eng_pit = 0
+var $squ3_eng_pit = 0
+var $squ4_eng_pit = 0
+var $squ1_eng_yaw = 0
+var $squ2_eng_yaw = 0
+var $squ3_eng_yaw = 0
+var $squ4_eng_yaw = 0
+var $dia1_eng_pit = 0
+var $dia2_eng_pit = 0
+var $dia3_eng_pit = 0
+var $dia4_eng_pit = 0
+var $dia1_eng_yaw = 0
+var $dia2_eng_yaw = 0
+var $dia3_eng_yaw = 0
+var $dia4_eng_yaw = 0
 
 ; RCS parameters
 var $rcs_state = 1
@@ -158,24 +167,40 @@ function @set_leg_parameters()
 		output_number("leg_stbd_r_hinge", 0, -0.126)
 
 function @reset_gimbal_parameters()
-	$eng_dors_pit = 0
-	$eng_vent_pit = 0
-	$eng_port_pit = 0
-	$eng_stbd_pit = 0
-	$eng_dors_yaw = 0
-	$eng_vent_yaw = 0
-	$eng_port_yaw = 0
-	$eng_stbd_yaw = 0
+	$squ1_eng_pit = 0
+	$squ2_eng_pit = 0
+	$squ3_eng_pit = 0
+	$squ4_eng_pit = 0
+	$squ1_eng_yaw = 0
+	$squ2_eng_yaw = 0
+	$squ3_eng_yaw = 0
+	$squ4_eng_yaw = 0
+	$dia1_eng_pit = 0
+	$dia2_eng_pit = 0
+	$dia3_eng_pit = 0
+	$dia4_eng_pit = 0
+	$dia1_eng_yaw = 0
+	$dia2_eng_yaw = 0
+	$dia3_eng_yaw = 0
+	$dia4_eng_yaw = 0
 
 function @set_gimbal_parameters()
-	output_number("eng_dors", 1, $eng_dors_pit)
-	output_number("eng_vent", 1, $eng_vent_pit)
-	output_number("eng_port", 1, $eng_port_pit)
-	output_number("eng_stbd", 1, $eng_stbd_pit)
-	output_number("eng_dors", 2, $eng_dors_yaw)
-	output_number("eng_vent", 2, $eng_vent_yaw)
-	output_number("eng_port", 2, $eng_port_yaw)
-	output_number("eng_stbd", 2, $eng_stbd_yaw)
+	output_number("squ1_eng", 1, $squ1_eng_pit)
+	output_number("squ2_eng", 1, $squ2_eng_pit)
+	output_number("squ3_eng", 1, $squ3_eng_pit)
+	output_number("squ4_eng", 1, $squ4_eng_pit)
+	output_number("dia1_eng", 1, $dia1_eng_pit)
+	output_number("dia2_eng", 1, $dia2_eng_pit)
+	output_number("dia3_eng", 1, $dia3_eng_pit)
+	output_number("dia4_eng", 1, $dia4_eng_pit)
+	output_number("squ1_eng", 2, $squ1_eng_yaw)
+	output_number("squ2_eng", 2, $squ2_eng_yaw)
+	output_number("squ3_eng", 2, $squ3_eng_yaw)
+	output_number("squ4_eng", 2, $squ4_eng_yaw)
+	output_number("dia1_eng", 2, $dia1_eng_yaw)
+	output_number("dia2_eng", 2, $dia2_eng_yaw)
+	output_number("dia3_eng", 2, $dia3_eng_yaw)
+	output_number("dia4_eng", 2, $dia4_eng_yaw)
 
 function @reset_rcs_parameters()
 	$fwd_dors_rcs_1 = 0
@@ -276,9 +301,9 @@ function @set_rcs_parameters()
 	output_number("aft_stbd_rcs", 2, $aft_stbd_rcs_2)
 	output_number("aft_stbd_rcs", 3, $aft_stbd_rcs_3)
 	output_number("aft_stbd_rcs", 4, $aft_stbd_rcs_4)
-	output_number("bay_rcs_pitch_pump", 0, abs($pit_cmd))
-	output_number("bay_rcs_yaw_pump", 0, abs($yaw_cmd))
-	output_number("bay_rcs_roll_pump", 0, abs($rol_cmd))
+	output_number("rcs_pitch_pump", 0, abs($pit_cmd))
+	output_number("rcs_yaw_pump", 0, abs($yaw_cmd))
+	output_number("rcs_roll_pump", 0, abs($rol_cmd))
 
 function @get_duration($secs:number):text
 	if $secs > 3600
@@ -511,15 +536,15 @@ function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number,
 function @draw_engine($x:number, $y:number, $gx:number, $gy:number, $r:number, $eng:text, $label:text)
 	var $s = screen($dash, ($screen_display.$screen):number)
 	var $kn = input_number($eng, 0) / 1000
-	var $thrust = text("{00.00}kN", $kn)
+	var $thrust = text("{0000}kN", $kn)
 	if $engine_throttle > 0
 		$s.draw_circle($x + $gx, $y + $gy, $r * $kn / 1800, blue, blue)
 		$s.draw_circle($x, $y, $r, green)
 	else
 		$s.draw_circle($x, $y, $r, red)
 	$s.draw_circle($x + $gx, $y + $gy, 2, white, black)
-	$s.write($x - (size($label) * $cw - 1), $y - $r - $s.char_h, white, $label)
-	$s.write($x - (size($thrust) * $cw - 1), $y + $r + 1, white, $thrust)
+	$s.write($x - (size($label) * $cw - 1), $y - $r + 4, white, $label)
+	$s.write($x - (size($thrust) * $cw - 1), $y + $s.char_h + 4, white, $thrust)
 
 function @draw_throttle($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -689,11 +714,15 @@ function @draw_screen_2()
 function @draw_screen_3()
 	@draw_meter(20, "ch4_tank_volume", "CH4")
 	@draw_meter(280, "o2_tank_volume", "O2")
-	@draw_engine(150, 50, $eng_dors_yaw * 6, -$eng_dors_pit * 6, 40, "eng_dors", "Dors")
-	@draw_engine(80, 120, $eng_port_yaw * 6, -$eng_port_pit * 6, 40, "eng_port", "Port")
-	@draw_engine(220, 120, $eng_stbd_yaw * 6, -$eng_stbd_pit * 6, 40, "eng_stbd", "Stbd")
-	@draw_engine(150, 190, $eng_vent_yaw * 6, -$eng_vent_pit * 6, 40, "eng_vent", "Vent")
-	@draw_throttle(220, 230)
+	@draw_engine(150, 30, $squ1_eng_pit * 4, -$squ1_eng_yaw * 4, 30, "squ1_eng", "S1")
+	@draw_engine(60, 120, $squ2_eng_pit * 4, -$squ2_eng_yaw * 4, 30, "squ2_eng", "S2")
+	@draw_engine(150, 210, $squ3_eng_pit * 4, -$squ3_eng_yaw * 4, 30, "squ3_eng", "S3")
+	@draw_engine(240, 120, $squ4_eng_pit * 4, -$squ4_eng_yaw * 4, 30, "squ4_eng", "S4")
+	@draw_engine(210, 60, $dia1_eng_pit * 4, -$dia1_eng_yaw * 4, 30, "dia1_eng", "D1")
+	@draw_engine(90, 60, $dia2_eng_pit * 4, -$dia2_eng_yaw * 4, 30, "dia2_eng", "D2")
+	@draw_engine(90, 180, $dia3_eng_pit * 4, -$dia3_eng_yaw * 4, 30, "dia3_eng", "D3")
+	@draw_engine(210, 180, $dia4_eng_pit * 4, -$dia4_eng_yaw * 4, 30, "dia4_eng", "D4")
+	@draw_throttle(260, 230)
 	@draw_throttle_control(150, 270)
 	@write_rate(55, 280, "CH4")
 	@write_rate(245, 280, "O2")
@@ -731,19 +760,33 @@ update
 
 	; Engine ignition
 	if $engine_throttle > 0
-		if input_number("eng_dors", 0) == 0
-			output_number("eng_dors", 0, 1)
-		if input_number("eng_vent", 0) == 0
-			output_number("eng_vent", 0, 1)
-		if input_number("eng_port", 0) == 0
-			output_number("eng_port", 0, 1)
-		if input_number("eng_stbd", 0) == 0
-			output_number("eng_stbd", 0, 1)
-		output_number("bay_ch4_pump", 0, $engine_throttle)
-		output_number("bay_dors_o2_pump", 0, $engine_throttle)
-		output_number("bay_vent_o2_pump", 0, $engine_throttle)
-		output_number("bay_port_o2_pump", 0, $engine_throttle)
-		output_number("bay_stbd_o2_pump", 0, $engine_throttle)
+		if input_number("squ1_eng", 0) == 0
+			output_number("squ1_eng", 0, 1)
+		if input_number("squ2_eng", 0) == 0
+			output_number("squ2_eng", 0, 1)
+		if input_number("squ3_eng", 0) == 0
+			output_number("squ3_eng", 0, 1)
+		if input_number("squ4_eng", 0) == 0
+			output_number("squ4_eng", 0, 1)
+		output_number("ch4_squ_pump", 0, $engine_throttle)
+		output_number("o2_squ1_pump", 0, $engine_throttle)
+		output_number("o2_squ2_pump", 0, $engine_throttle)
+		output_number("o2_squ3_pump", 0, $engine_throttle)
+		output_number("o2_squ4_pump", 0, $engine_throttle)
+		if $dia_eng_state == 1
+			if input_number("dia1_eng", 0) == 0
+				output_number("dia1_eng", 0, 1)
+			if input_number("dia2_eng", 0) == 0
+				output_number("dia2_eng", 0, 1)
+			if input_number("dia3_eng", 0) == 0
+				output_number("dia3_eng", 0, 1)
+			if input_number("dia4_eng", 0) == 0
+				output_number("dia4_eng", 0, 1)
+			output_number("ch4_dia_pump", 0, $engine_throttle)
+			output_number("o2_dia1_pump", 0, $engine_throttle)
+			output_number("o2_dia2_pump", 0, $engine_throttle)
+			output_number("o2_dia3_pump", 0, $engine_throttle)
+			output_number("o2_dia4_pump", 0, $engine_throttle)
 
 	; Determine pitch command
 	if $sas_pit == 0
@@ -800,23 +843,23 @@ update
 			$mid_port_rcs_3 = -$rol_cmd
 			$mid_stbd_rcs_3 = -$rol_cmd
 		@set_rcs_parameters()
-		output_number("o2_rcs", 0, 0)
-		output_number("ch4_rcs", 0, 0)
+		output_number("o2_rcs_valve", 0, 0)
+		output_number("ch4_rcs_valve", 0, 0)
 		if $rcs_fuel == 0
-			output_number("o2_rcs", 0, 1)
+			output_number("o2_rcs_valve", 0, 1)
 		else
-			output_number("ch4_rcs", 0, 1)
+			output_number("ch4_rcs_valve", 0, 1)
 
 	; Execute Engine gimballing commands
 	if $engine_gimbal == 1
-		$eng_dors_pit = -$pit_cmd * 0.75
-		$eng_vent_pit = -$pit_cmd * 0.75
-		$eng_port_pit = -$pit_cmd * 0.75 - $rol_cmd * 0.25
-		$eng_stbd_pit = -$pit_cmd * 0.75 + $rol_cmd * 0.25
-		$eng_dors_yaw = $yaw_cmd * 0.75 - $rol_cmd * 0.25
-		$eng_vent_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
-		$eng_port_yaw = $yaw_cmd * 0.75
-		$eng_stbd_yaw = $yaw_cmd * 0.75
+		$squ1_eng_pit = -$pit_cmd * 0.75
+		$squ2_eng_pit = -$pit_cmd * 0.75 - $rol_cmd * 0.25
+		$squ3_eng_pit = -$pit_cmd * 0.75
+		$squ4_eng_pit = -$pit_cmd * 0.75 + $rol_cmd * 0.25
+		$squ1_eng_yaw = $yaw_cmd * 0.75 - $rol_cmd * 0.25
+		$squ2_eng_yaw = $yaw_cmd * 0.75
+		$squ3_eng_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
+		$squ4_eng_yaw = $yaw_cmd * 0.75
 		@set_gimbal_parameters()
 	else
 		@reset_gimbal_parameters()
