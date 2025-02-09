@@ -27,13 +27,17 @@ var $screen_viewing = "214" ; Currently selected screen per display
 ; Lamps
 var $lamp_states = ".bridge_nose_lamp{0}.bridge_cntr_lamp{0}.bridge_port_lamp{0}.bridge_stbd_lamp{0}.cargo_cntr_lamp{0}.cargo_port_lamp{0}.cargo_stbd_lamp{0}"
 
-; Fuel colours
+; Custom colours
 var $o2r = 0
 var $o2g = 128
 var $o2b = 255
 var $ch4r = 178
 var $ch4g = 34
 var $ch4b = 34
+var $col_o2 = color(1, 128, 255)
+var $col_ch4 = color(178, 34, 34)
+var $col_sky = color(24, 147, 189)
+var $col_terr = color(167, 91, 13)
 
 ; G-force
 var $g_force_x = 0
@@ -352,6 +356,12 @@ function @ball_y($x:number, $y:number):number
 	var $circ_y = @circ($y)
 	return $circ_y * cos($circ_x * $hpi / 2)
 
+function @polar_to_x($a:number, $r:number):number
+	return $nav_r * $r * sin(-$a * pi)
+
+function @polar_to_y($a:number, $r:number):number
+	return $nav_r * $r * cos($a * pi)
+
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
 ;---------------------------------------------------------------------------------------------------------------------
@@ -383,6 +393,7 @@ function @draw_retrograde($x:number, $y:number)
 	$s.draw_line($x + 3, $y - 3, $x - 3, $y + 3, green)
 
 function @draw_navball()
+	var $op = ""
 	var $s = screen($dash, ($screen_display.$screen):number)
 	var $hrz_pit = input_number("bridge_nav_instrument", 4)
 	var $hrz_rol = input_number("bridge_nav_instrument", 5)
@@ -390,10 +401,11 @@ function @draw_navball()
 	var $pro_yaw = input_number("bridge_nav_instrument", 20)
 	var $ret_pit = input_number("bridge_nav_instrument", 21)
 	var $ret_yaw = input_number("bridge_nav_instrument", 22)
-	var $hrz_x = $nav_r * sin(($hrz_rol + 1) * pi)
-	var $hrz_y = $nav_r * cos(($hrz_rol) * pi)
 	$s.draw_circle($nav_x, $nav_y, $nav_r, white)
-	$s.draw_circle($nav_x + $hrz_x, $nav_y + $hrz_y, 2, orange)
+	$s.draw_circle($nav_x + @polar_to_x($hrz_rol, 1), $nav_y + @polar_to_y($hrz_rol, 1), 2, $col_terr)
+	$s.draw_circle($nav_x + @polar_to_x($hrz_rol + 0.5, 1), $nav_y + @polar_to_y($hrz_rol + 0.5, 1), 2, $col_terr)
+	$s.draw_circle($nav_x + @polar_to_x($hrz_rol - 0.5, 1), $nav_y + @polar_to_y($hrz_rol - 0.5, 1), 2, $col_terr)
+	$s.draw_circle($nav_x + @polar_to_x($hrz_rol, $hrz_pit), $nav_y + @polar_to_y($hrz_rol, $hrz_pit), 2, $col_terr)
 	if abs($pro_pit) < 0.5
 		@draw_prograde($nav_x + $nav_r * @ball_x($pro_yaw / 2, $pro_pit), $nav_y + $nav_r * @ball_y($pro_yaw / 2, $pro_pit))
 	else
