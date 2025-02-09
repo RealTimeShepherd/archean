@@ -5,6 +5,12 @@
 ; #region variable declarations
 ;---------------------------------------------------------------------------------------------------------------------
 
+; Constants
+const $hpi = 1.5708
+const $nav_x = 150
+const $nav_y = 120
+const $nav_r = 100
+
 ; Dashboard
 var $dash = "main_dash"
 var $screen = 0
@@ -16,7 +22,7 @@ var $ch = 4
 ; Screens
 var $screen_display = "024" ; Channel numbers of the display screens
 var $screen_control = "135" ; Channel numbers of the control screens
-var $screen_viewing = "213" ; Currently selected screen per display
+var $screen_viewing = "214" ; Currently selected screen per display
 
 ; Lamps
 var $lamp_states = ".bridge_nose_lamp{0}.bridge_cntr_lamp{0}.bridge_port_lamp{0}.bridge_stbd_lamp{0}.cargo_cntr_lamp{0}.cargo_port_lamp{0}.cargo_stbd_lamp{0}"
@@ -76,7 +82,7 @@ var $dia3_eng_yaw = 0
 var $dia4_eng_yaw = 0
 
 ; RCS parameters
-var $rcs_state = 1
+var $rcs_state = 0
 var $rcs_fuel = 0 ; 0 = o2, 1 = ch4
 var $fwd_dors_rcs_1 = 0
 var $fwd_dors_rcs_2 = 0
@@ -135,6 +141,19 @@ var $sas_pit_mode = "pro"
 var $sas_yaw_mode = "pro"
 var $sas_rol_mode = "down"
 
+;---------------------------------------------------------------------------------------------------------------------
+; #endregion
+;---------------------------------------------------------------------------------------------------------------------
+; #region pid functions
+;---------------------------------------------------------------------------------------------------------------------
+
+function @pitch_pid($_setpoint:number, $_processvalue:number, $_kp:number, $_ki:number, $_kd:number, $_integral:number, $_prev_error:number) : number
+	var $_error = $_setpoint - $_processvalue
+	var $_dt = delta_time
+	var $_derivative = ($_error - $_prev_error) / $_dt
+	$_integral += $_error * $_dt
+	$_prev_error = $_error
+	return $_kp * $_error + $_ki * $_integral + $_kd * $_derivative
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -305,6 +324,12 @@ function @set_rcs_parameters()
 	output_number("rcs_yaw_pump", 0, abs($yaw_cmd))
 	output_number("rcs_roll_pump", 0, abs($rol_cmd))
 
+;---------------------------------------------------------------------------------------------------------------------
+; #endregion
+;---------------------------------------------------------------------------------------------------------------------
+; #region calculations
+;---------------------------------------------------------------------------------------------------------------------
+
 function @get_duration($secs:number):text
 	if $secs > 3600
 		var $hours = floor($secs / 3600)
@@ -313,6 +338,67 @@ function @get_duration($secs:number):text
 		return text("00:{00}", floor($secs / 60)) & text(":{00}", $secs % 60)
 	else
 		return text("00:00:{00}", $secs)
+
+function @circ($v:number):number
+	return cos(((2 * $v) + 1) * $hpi)
+
+function @ball_x($x:number, $y:number):number
+	var $circ_x = @circ($x)
+	var $circ_y = @circ($y)
+	return $circ_x * cos($circ_y * $hpi / 2)
+
+function @ball_y($x:number, $y:number):number
+	var $circ_x = @circ($x)
+	var $circ_y = @circ($y)
+	return $circ_y * cos($circ_x * $hpi / 2)
+
+;---------------------------------------------------------------------------------------------------------------------
+; #endregion
+;---------------------------------------------------------------------------------------------------------------------
+; #region draw navball components
+;---------------------------------------------------------------------------------------------------------------------
+
+function @draw_forward()
+	var $s = screen($dash, ($screen_display.$screen):number)
+	$s.draw_circle($nav_x, $nav_y, 1, orange)
+	$s.draw_line($nav_x - 12, $nav_y, $nav_x - 5, $nav_y, orange)
+	$s.draw_line($nav_x + 12, $nav_y, $nav_x + 5, $nav_y, orange)
+	$s.draw_line($nav_x - 5, $nav_y, $nav_x + 1, $nav_y + 6, orange)
+	$s.draw_line($nav_x + 5, $nav_y, $nav_x - 1, $nav_y + 6, orange)
+
+function @draw_prograde($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	$s.draw_circle($x, $y, 5, green)
+	$s.draw_line($x - 9, $y, $x - 4, $y, green)
+	$s.draw_line($x + 9, $y, $x + 4, $y, green)
+	$s.draw_line($x, $y - 9, $x, $y - 4, green)
+
+function @draw_retrograde($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	$s.draw_circle($x, $y, 5, green)
+	$s.draw_line($x - 8, $y + 5, $x - 4, $y + 2, green)
+	$s.draw_line($x + 8, $y + 5, $x + 4, $y + 2, green)
+	$s.draw_line($x, $y - 9, $x, $y - 4, green)
+	$s.draw_line($x - 3, $y - 3, $x + 3, $y + 3, green)
+	$s.draw_line($x + 3, $y - 3, $x - 3, $y + 3, green)
+
+function @draw_navball()
+	var $s = screen($dash, ($screen_display.$screen):number)
+	var $hrz_pit = input_number("bridge_nav_instrument", 4)
+	var $hrz_rol = input_number("bridge_nav_instrument", 5)
+	var $pro_pit = input_number("bridge_nav_instrument", 19)
+	var $pro_yaw = input_number("bridge_nav_instrument", 20)
+	var $ret_pit = input_number("bridge_nav_instrument", 21)
+	var $ret_yaw = input_number("bridge_nav_instrument", 22)
+	var $hrz_x = $nav_r * sin(($hrz_rol + 1) * pi)
+	var $hrz_y = $nav_r * cos(($hrz_rol) * pi)
+	$s.draw_circle($nav_x, $nav_y, $nav_r, white)
+	$s.draw_circle($nav_x + $hrz_x, $nav_y + $hrz_y, 2, orange)
+	if abs($pro_pit) < 0.5
+		@draw_prograde($nav_x + $nav_r * @ball_x($pro_yaw / 2, $pro_pit), $nav_y + $nav_r * @ball_y($pro_yaw / 2, $pro_pit))
+	else
+		@draw_retrograde($nav_x + $nav_r * @ball_x($ret_yaw / 2, $ret_pit), $nav_y + $nav_r * @ball_y($ret_yaw / 2, $ret_pit))
+	@draw_forward()
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -456,7 +542,9 @@ function @draw_tank($x:number, $y:number, $density:text, $volume:text, $type:tex
 	elseif $type == "CH4"
 		@draw_level_rect($x, $y, 80, 100, 2, 255, 255, 255, $ch4r, $ch4g, $ch4b, $l)
 	$s.write($x - (size($label1) * $cw), $y - 51 - $s.char_h, white, $label1)
+	$s.write($x - (size("mass") * $cw), $y - 4 * $ch, white, "mass")
 	$s.write($x - (size($kg) * $cw), $y - $ch, white, $kg)
+	$s.write($x - (size("composition") * $cw), $y + 49 - 5 * $ch, white, "composition")
 	$s.write($x - (size($comp) * $cw), $y + 49 - $s.char_h, white, $comp)
 
 function @draw_meter($x:number, $volume:text, $type:text)
@@ -500,26 +588,26 @@ function @draw_rcs($x:number, $y:number, $orient:text, $one:number, $two:number,
 		$c = color($o2r, $o2g, $o2b)
 	elseif $rcs_fuel == 1
 		$c = color($ch4r, $ch4g, $ch4b)
-	if $orient == "dors"
+	if $orient == "vent"
 		$u = $one * $m
 		$d = $two * $m
 		$l = $four * $m
 		$r = $three * $m
-	elseif $orient == "vent"
+	elseif $orient == "dors"
 		$u = $two * $m
 		$d = $one * $m
 		$l = $three * $m
 		$r = $four * $m
-	elseif $orient == "port"
+	elseif $orient == "stbd"
 		$u = $four * $m
 		$d = $three * $m
-		$l = $two * $m
-		$r = $one * $m
+		$l = $one * $m
+		$r = $two * $m
 	else
 		$u = $three * $m
 		$d = $four * $m
-		$l = $one * $m
-		$r = $two * $m
+		$l = $two * $m
+		$r = $one * $m
 	$s.draw_line($x - 3, $y - 4, $x + 4, $y - 4, white)
 	$s.draw_line($x - 4, $y - 3, $x - 4, $y + 4, white)
 	$s.draw_line($x - 3, $y + 4, $x + 4, $y + 4, white)
@@ -576,6 +664,26 @@ function @draw_throttle_control($x:number, $y:number)
 	; FULL hit detection
 	if $s.button_rect($x + 10, $y - 10, $x + 30, $y + 10, color(0, 0, 0, 0))
 		$engine_throttle = 1
+
+function @draw_sas_pit_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	@draw_toggle($x, $y, 0, 255, 0, 255, 0, 0, "ON", "OFF", "SAS PIT", $sas_pit, 1)
+	; ON hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$sas_pit = 1
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$sas_pit = 0
+
+function @draw_sas_rol_control($x:number, $y:number)
+	var $s = screen($dash, ($screen_display.$screen):number)
+	@draw_toggle($x, $y, 0, 255, 0, 255, 0, 0, "ON", "OFF", "SAS ROL", $sas_rol, 1)
+	; ON hit detection
+	if $s.button_rect($x - 20, $y - 10, $x, $y + 10, color(0, 0, 0, 0))
+		$sas_rol = 1
+	; OFF hit detection
+	if $s.button_rect($x, $y - 10, $x + 20, $y + 10, color(0, 0, 0, 0))
+		$sas_rol = 0
 
 function @draw_rcs_fuel_selector($x:number, $y:number)
 	var $s = screen($dash, ($screen_display.$screen):number)
@@ -710,23 +818,45 @@ function @draw_screen_2()
 	@draw_rcs_fuel_selector(240, 210)
 	@draw_leg_control(240, 170)
 	@draw_anchor_control(240, 130)
+	@draw_sas_rol_control(240, 90)
+	@draw_sas_pit_control(240, 50)
 
 function @draw_screen_3()
 	@draw_meter(20, "ch4_tank_volume", "CH4")
 	@draw_meter(280, "o2_tank_volume", "O2")
-	@draw_engine(150, 30, $squ1_eng_pit * 4, -$squ1_eng_yaw * 4, 30, "squ1_eng", "S1")
-	@draw_engine(60, 120, $squ2_eng_pit * 4, -$squ2_eng_yaw * 4, 30, "squ2_eng", "S2")
-	@draw_engine(150, 210, $squ3_eng_pit * 4, -$squ3_eng_yaw * 4, 30, "squ3_eng", "S3")
-	@draw_engine(240, 120, $squ4_eng_pit * 4, -$squ4_eng_yaw * 4, 30, "squ4_eng", "S4")
-	@draw_engine(210, 60, $dia1_eng_pit * 4, -$dia1_eng_yaw * 4, 30, "dia1_eng", "D1")
-	@draw_engine(90, 60, $dia2_eng_pit * 4, -$dia2_eng_yaw * 4, 30, "dia2_eng", "D2")
-	@draw_engine(90, 180, $dia3_eng_pit * 4, -$dia3_eng_yaw * 4, 30, "dia3_eng", "D3")
-	@draw_engine(210, 180, $dia4_eng_pit * 4, -$dia4_eng_yaw * 4, 30, "dia4_eng", "D4")
-	@draw_throttle(260, 230)
+	@draw_engine(150, 30, $squ1_eng_yaw * 4, -$squ1_eng_pit * 4, 30, "squ1_eng", "S1")
+	@draw_engine(60, 120, $squ2_eng_yaw * 4, -$squ2_eng_pit * 4, 30, "squ2_eng", "S2")
+	@draw_engine(150, 210, $squ3_eng_yaw * 4, -$squ3_eng_pit * 4, 30, "squ3_eng", "S3")
+	@draw_engine(240, 120, $squ4_eng_yaw * 4, -$squ4_eng_pit * 4, 30, "squ4_eng", "S4")
+	@draw_engine(210, 60, $dia1_eng_yaw * 4, -$dia1_eng_pit * 4, 30, "dia1_eng", "D1")
+	@draw_engine(90, 60, $dia2_eng_yaw * 4, -$dia2_eng_pit * 4, 30, "dia2_eng", "D2")
+	@draw_engine(90, 180, $dia3_eng_yaw * 4, -$dia3_eng_pit * 4, 30, "dia3_eng", "D3")
+	@draw_engine(210, 180, $dia4_eng_yaw * 4, -$dia4_eng_pit * 4, 30, "dia4_eng", "D4")
+	@draw_throttle(255, 210)
 	@draw_throttle_control(150, 270)
 	@write_rate(55, 280, "CH4")
 	@write_rate(245, 280, "O2")
 	@write_gforce(150, 120)
+
+function @draw_screen_4()
+	var $s = screen($dash, ($screen_display.$screen):number)
+	@draw_navball()
+	var $rate0 = input_number("angular_velocity_sensor", 0) * 60
+	var $rate1 = input_number("angular_velocity_sensor", 1) * 60
+	var $rate2 = input_number("angular_velocity_sensor", 2) * 60
+	$s.write(20, 220, white, "rates rot/minute")
+	if $rate2 < 0
+		$s.write(20, 230, white, text("pitch:{0.00000}", $rate2))
+	else
+		$s.write(20, 230, white, text("pitch: {0.00000}", $rate2))
+	if $rate0 < 0
+		$s.write(20, 240, white, text("yaw:  {0.00000}", $rate0))
+	else
+		$s.write(20, 240, white, text("yaw:   {0.00000}", $rate0))
+	if $rate1 < 0
+		$s.write(20, 250, white, text("roll: {0.00000}", $rate1))
+	else
+		$s.write(20, 250, white, text("roll:  {0.00000}", $rate1))
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
@@ -793,6 +923,10 @@ update
 		$cmndr_pit = input_number("cmndr_seat", 1)
 		$pilot_pit = input_number("pilot_seat", 1)
 		$pit_cmd = $cmndr_pit + $pilot_pit
+	else
+		var $sun_pit = input_number("solar_sensor_pitch", 0)
+		$pit_cmd = @pitch_pid(0, $sun_pit * -1, 6, 0.001, 10)
+		print("sun_pit: " & ($sun_pit * -1):text & "   pit_cmd: " & $pit_cmd:text)
 
 	; Determine yaw command
 	if $sas_yaw == 0
@@ -815,7 +949,7 @@ update
 			$aft_dors_rcs_2 = $pit_cmd
 			$fwd_vent_rcs_1 = $pit_cmd
 			$aft_vent_rcs_1 = $pit_cmd
-		elseif $pit_cmd < 0
+		else
 			$fwd_dors_rcs_1 = -$pit_cmd
 			$aft_dors_rcs_1 = -$pit_cmd
 			$fwd_vent_rcs_2 = -$pit_cmd
@@ -860,6 +994,15 @@ update
 		$squ2_eng_yaw = $yaw_cmd * 0.75
 		$squ3_eng_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
 		$squ4_eng_yaw = $yaw_cmd * 0.75
+		if $dia_eng_state == 1
+			$dia1_eng_pit = -$pit_cmd * 0.75 + $rol_cmd * 0.25
+			$dia2_eng_pit = -$pit_cmd * 0.75 - $rol_cmd * 0.25
+			$dia3_eng_pit = -$pit_cmd * 0.75 - $rol_cmd * 0.25
+			$dia4_eng_pit = -$pit_cmd * 0.75 + $rol_cmd * 0.25
+			$dia1_eng_yaw = $yaw_cmd * 0.75 - $rol_cmd * 0.25
+			$dia2_eng_yaw = $yaw_cmd * 0.75 - $rol_cmd * 0.25
+			$dia3_eng_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
+			$dia4_eng_yaw = $yaw_cmd * 0.75 + $rol_cmd * 0.25
 		@set_gimbal_parameters()
 	else
 		@reset_gimbal_parameters()
@@ -898,6 +1041,8 @@ update
 			@draw_screen_2()
 		elseif $screen_viewing.$i == 3
 			@draw_screen_3()
+		elseif $screen_viewing.$i == 4
+			@draw_screen_4()
 
 ;---------------------------------------------------------------------------------------------------------------------
 ; #endregion
