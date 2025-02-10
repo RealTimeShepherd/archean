@@ -401,11 +401,54 @@ function @draw_navball()
 	var $pro_yaw = input_number("bridge_nav_instrument", 20)
 	var $ret_pit = input_number("bridge_nav_instrument", 21)
 	var $ret_yaw = input_number("bridge_nav_instrument", 22)
+	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol, 1), $nav_y + @polar_to_y($hrz_rol, 1), 2, $col_terr)
+	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol + 0.5, 1), $nav_y + @polar_to_y($hrz_rol + 0.5, 1), 2, $col_terr)
+	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol - 0.5, 1), $nav_y + @polar_to_y($hrz_rol - 0.5, 1), 2, $col_terr)
+	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol, -$hrz_pit), $nav_y + @polar_to_y($hrz_rol, -$hrz_pit), 2, $col_terr)
+
+	; Calculate terrain ellipse arc
+	var $flat_x = 0
+	var $flat_y = 0
+	array $el_x:number
+	array $el_y:number
+	$el_x.clear()
+	$el_y.clear()
+	for 0,20 ($e)
+		$flat_x = ($e - 10) * 10
+		$flat_y = -$nav_r * $hrz_pit * sqrt(1 - (pow($flat_x, 2) / pow($nav_r, 2)))
+		$el_x.append($flat_x * cos($hrz_rol * pi) - $flat_y * sin($hrz_rol * pi))
+		$el_y.append($flat_x * sin($hrz_rol * pi) + $flat_y * cos($hrz_rol * pi))
+
+	; Calculate terrain & sky circle arcs
+	var $a = 0
+	array $tr_x:number
+	array $tr_y:number
+	array $sk_x:number
+	array $sk_y:number
+	$tr_x.clear()
+	$tr_y.clear()
+	$sk_x.clear()
+	$sk_y.clear()
+	for 0,20 ($c)
+		$a = (-$c + 10) / 20
+		$tr_x.append(@polar_to_x($hrz_rol + $a, 1))
+		$tr_y.append(@polar_to_y($hrz_rol + $a, 1))
+
+	; Fill in terrain with triangles
+	var $d1 = 0
+	var $d2 = 0
+	for 1,20 ($d)
+		$d1 = $d - 1
+		$s.draw_triangle($nav_x + $el_x.$d, $nav_y + $el_y.$d, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $tr_x.$d1, $nav_y + $tr_y.$d1, $col_terr, $col_terr)
+		if $d > 1
+			$d2 = $d - 2
+			$s.draw_triangle($nav_x + $tr_x.$d2, $nav_y + $tr_y.$d2, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $tr_x.$d1, $nav_y + $tr_y.$d1, $col_terr, $col_terr)
+
+	; Remove stray pixels
+	$s.draw_circle($nav_x, $nav_y, $nav_r + 1, black)
+	; Draw navball outline
 	$s.draw_circle($nav_x, $nav_y, $nav_r, white)
-	$s.draw_circle($nav_x + @polar_to_x($hrz_rol, 1), $nav_y + @polar_to_y($hrz_rol, 1), 2, $col_terr)
-	$s.draw_circle($nav_x + @polar_to_x($hrz_rol + 0.5, 1), $nav_y + @polar_to_y($hrz_rol + 0.5, 1), 2, $col_terr)
-	$s.draw_circle($nav_x + @polar_to_x($hrz_rol - 0.5, 1), $nav_y + @polar_to_y($hrz_rol - 0.5, 1), 2, $col_terr)
-	$s.draw_circle($nav_x + @polar_to_x($hrz_rol, $hrz_pit), $nav_y + @polar_to_y($hrz_rol, $hrz_pit), 2, $col_terr)
+
 	if abs($pro_pit) < 0.5
 		@draw_prograde($nav_x + $nav_r * @ball_x($pro_yaw / 2, $pro_pit), $nav_y + $nav_r * @ball_y($pro_yaw / 2, $pro_pit))
 	else
