@@ -334,6 +334,15 @@ function @set_rcs_parameters()
 ; #region calculations
 ;---------------------------------------------------------------------------------------------------------------------
 
+function @get_ellipse_y($b:number, $x:number):number ; $b = semi-major axis, $x = x value in the ellipse equation ($nav_r is the semi major axis)
+	return -$nav_r * $b * sqrt(1 - (pow($x, 2) / pow($nav_r, 2)))
+
+function @rotate_op($x:number, $y:number, $a:number):text ; $x,$y = ordered pair, $a angle in game units (-1 => 1 covers 360 degrees)
+	var $op = ""
+	$op.x = $x * cos($a * pi) - $y * sin($a * pi)
+	$op.y = $x * sin($a * pi) + $y * cos($a * pi)
+	return $op
+
 function @get_duration($secs:number):text
 	if $secs > 3600
 		var $hours = floor($secs / 3600)
@@ -344,7 +353,7 @@ function @get_duration($secs:number):text
 		return text("00:00:{00}", $secs)
 
 function @circ($v:number):number
-	return cos(((2 * $v) + 1) * $hpi)
+	return sin(-$v * pi)
 
 function @ball_x($x:number, $y:number):number
 	var $circ_x = @circ($x)
@@ -401,23 +410,25 @@ function @draw_navball()
 	var $pro_yaw = input_number("bridge_nav_instrument", 20)
 	var $ret_pit = input_number("bridge_nav_instrument", 21)
 	var $ret_yaw = input_number("bridge_nav_instrument", 22)
-	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol, 1), $nav_y + @polar_to_y($hrz_rol, 1), 2, $col_terr)
-	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol + 0.5, 1), $nav_y + @polar_to_y($hrz_rol + 0.5, 1), 2, $col_terr)
-	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol - 0.5, 1), $nav_y + @polar_to_y($hrz_rol - 0.5, 1), 2, $col_terr)
-	; $s.draw_circle($nav_x + @polar_to_x($hrz_rol, -$hrz_pit), $nav_y + @polar_to_y($hrz_rol, -$hrz_pit), 2, $col_terr)
 
 	; Calculate terrain ellipse arc
-	var $flat_x = 0
-	var $flat_y = 0
+	var $el_op = ""
+	var $lerp = 0
+	var $hx = 0
+	var $hy = 0
+	var $el_segs = 20
 	array $el_x:number
 	array $el_y:number
 	$el_x.clear()
 	$el_y.clear()
-	for 0,20 ($e)
-		$flat_x = ($e - 10) * 10
-		$flat_y = -$nav_r * $hrz_pit * sqrt(1 - (pow($flat_x, 2) / pow($nav_r, 2)))
-		$el_x.append($flat_x * cos($hrz_rol * pi) - $flat_y * sin($hrz_rol * pi))
-		$el_y.append($flat_x * sin($hrz_rol * pi) + $flat_y * cos($hrz_rol * pi))
+	for 0,$el_segs ($e)
+		$lerp = ($e - ($el_segs / 2)) / $el_segs
+		$hx = $nav_r * sin($lerp * pi)
+		$hy = @get_ellipse_y($hrz_pit, $hx)
+		$el_op = @rotate_op($hx, $hy, $hrz_rol)
+		$el_x.append($el_op.x:number)
+		$el_y.append($el_op.y:number)
+		;$s.draw_circle($nav_x + $el_op.x:number, $nav_y + $el_op.y:number, 2, white)
 
 	; Calculate terrain & sky circle arcs
 	var $a = 0
@@ -430,19 +441,33 @@ function @draw_navball()
 	$sk_x.clear()
 	$sk_y.clear()
 	for 0,20 ($c)
-		$a = (-$c + 10) / 20
-		$tr_x.append(@polar_to_x($hrz_rol + $a, 1))
-		$tr_y.append(@polar_to_y($hrz_rol + $a, 1))
+		$a = ($c - 10) / 20
+		$tr_x.append(@polar_to_x($hrz_rol - $a, 1))
+		$tr_y.append(@polar_to_y($hrz_rol - $a, 1))
+		$sk_x.append(@polar_to_x($hrz_rol + $a, -1))
+		$sk_y.append(@polar_to_y($hrz_rol + $a, -1))
 
-	; Fill in terrain with triangles
+	; Fill in terrain & sky with triangles
 	var $d1 = 0
 	var $d2 = 0
 	for 1,20 ($d)
 		$d1 = $d - 1
 		$s.draw_triangle($nav_x + $el_x.$d, $nav_y + $el_y.$d, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $tr_x.$d1, $nav_y + $tr_y.$d1, $col_terr, $col_terr)
+		$s.draw_triangle($nav_x + $el_x.$d, $nav_y + $el_y.$d, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $sk_x.$d1, $nav_y + $sk_y.$d1, $col_sky, $col_sky)
 		if $d > 1
 			$d2 = $d - 2
 			$s.draw_triangle($nav_x + $tr_x.$d2, $nav_y + $tr_y.$d2, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $tr_x.$d1, $nav_y + $tr_y.$d1, $col_terr, $col_terr)
+			$s.draw_triangle($nav_x + $sk_x.$d2, $nav_y + $sk_y.$d2, $nav_x + $el_x.$d1, $nav_y + $el_y.$d1, $nav_x + $sk_x.$d1, $nav_y + $sk_y.$d1, $col_sky, $col_sky)
+
+	; locate zenith/nadir
+	if $hrz_pit < 0
+		var $zen_x = @polar_to_x($hrz_rol, -1 - $hrz_pit)
+		var $zen_y = @polar_to_y($hrz_rol, -1 - $hrz_pit)
+		$s.draw_circle($nav_x + $zen_x, $nav_y + $zen_y, 2, white)
+	else
+		var $nad_x = @polar_to_x($hrz_rol, 1 + $hrz_pit)
+		var $nad_y = @polar_to_y($hrz_rol, 1 + $hrz_pit)
+		$s.draw_circle($nav_x + $nad_x, $nav_y + $nad_y, 2, black)
 
 	; Remove stray pixels
 	$s.draw_circle($nav_x, $nav_y, $nav_r + 1, black)
